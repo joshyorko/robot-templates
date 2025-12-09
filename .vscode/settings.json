@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "/var/home/kdlocpanda/second_brain/Projects/yorko-io/robot-templates/03-python-work-items/."
+    ]
+}

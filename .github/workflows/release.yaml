@@ -1,0 +1,177 @@
+name: Release Templates
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+env:
+  RCC_VERSION: v18.8.0
+  ROBOCORP_HOME: ${{ github.workspace }}/.rcc_home
+
+jobs:
+  warm-holotree:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install RCC
+        run: |
+          mkdir -p .tools/rcc/${{ env.RCC_VERSION }}
+          curl -sSL https://github.com/joshyorko/rcc/releases/download/${{ env.RCC_VERSION }}/rcc-linux64 -o .tools/rcc/${{ env.RCC_VERSION }}/rcc
+          chmod +x .tools/rcc/${{ env.RCC_VERSION }}/rcc
+          echo "${GITHUB_WORKSPACE}/.tools/rcc/${{ env.RCC_VERSION }}" >> "$GITHUB_PATH"
+          export PATH="${GITHUB_WORKSPACE}/.tools/rcc/${{ env.RCC_VERSION }}:$PATH"
+          rcc version
+
+      - name: Cache ROBOCORP_HOME
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.ROBOCORP_HOME }}
+          key: rcc-home-${{ runner.os }}-${{ env.RCC_VERSION }}-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
+          restore-keys: |
+            rcc-home-${{ runner.os }}-${{ env.RCC_VERSION }}-
+            rcc-home-${{ runner.os }}-
+
+      - name: Disable RCC telemetry
+        run: rcc config identity -t
+
+      - name: Warm Holotree for all templates
+        run: |
+          # Pre-warm holotree environments for each template
+          for dir in */; do
+            if [[ "$dir" == .* ]] || [[ "$dir" == "dist/" ]]; then
+              continue
+            fi
+            if [ -f "${dir}robot.yaml" ]; then
+              name=$(basename "$dir")
+              echo "Warming holotree for: $name"
+              rcc holotree variables -r "${dir}robot.yaml" || true
+            fi
+          done
+          rcc holotree list || true
+
+  release:
+    runs-on: ubuntu-latest
+    needs: warm-holotree
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install RCC
+        run: |
+          mkdir -p .tools/rcc/${{ env.RCC_VERSION }}
+          curl -sSL https://github.com/joshyorko/rcc/releases/download/${{ env.RCC_VERSION }}/rcc-linux64 -o .tools/rcc/${{ env.RCC_VERSION }}/rcc
+          chmod +x .tools/rcc/${{ env.RCC_VERSION }}/rcc
+          echo "${GITHUB_WORKSPACE}/.tools/rcc/${{ env.RCC_VERSION }}" >> "$GITHUB_PATH"
+          export PATH="${GITHUB_WORKSPACE}/.tools/rcc/${{ env.RCC_VERSION }}:$PATH"
+          rcc version
+
+      - name: Cache ROBOCORP_HOME
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.ROBOCORP_HOME }}
+          key: rcc-home-${{ runner.os }}-${{ env.RCC_VERSION }}-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
+          restore-keys: |
+            rcc-home-${{ runner.os }}-${{ env.RCC_VERSION }}-
+            rcc-home-${{ runner.os }}-
+
+      - name: Disable RCC telemetry
+        run: rcc config identity -t
+
+      - name: Wrap robot templates
+        run: |
+          mkdir -p dist/templates
+          
+          # Wrap each template directory that contains a robot.yaml
+          for dir in */; do
+            # Skip hidden dirs, dist, and non-template directories
+            if [[ "$dir" == .* ]] || [[ "$dir" == "dist/" ]]; then
+              continue
+            fi
+            
+            # Check if directory contains robot.yaml (is a valid robot)
+            if [ -f "${dir}robot.yaml" ]; then
+              name=$(basename "$dir")
+              echo "Wrapping template: $name"
+              rcc robot wrap -d "./$dir" -z "dist/templates/${name}.zip"
+            fi
+          done
+          
+          # List wrapped templates
+          echo "Wrapped templates:"
+          ls -la dist/templates/
+
+      - name: Create templates.zip bundle
+        run: |
+          cd dist/templates
+          zip ../templates.zip *.zip
+          cd ..
+          echo "Created templates.zip:"
+          ls -la templates.zip
+
+      - name: Calculate hash and update templates.yaml
+        run: |
+          HASH=$(sha256sum dist/templates.zip | cut -d' ' -f1)
+          DATE=$(date +%Y-%m-%d)
+          VERSION=${{ steps.version.outputs.VERSION }}
+          
+          # Read existing template descriptions
+          TEMPLATES=$(grep -A 100 "^templates:" templates.yaml | tail -n +2)
+          
+          cat > dist/templates.yaml << EOF
+          hash: ${HASH}
+          url: https://github.com/joshyorko/robot-templates/releases/download/${VERSION}/templates.zip
+          date: ${DATE}
+          templates:
+          ${TEMPLATES}
+          EOF
+          
+          # Clean up indentation
+          sed -i 's/^          //' dist/templates.yaml
+          
+          echo "Generated templates.yaml:"
+          cat dist/templates.yaml
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: Templates ${{ steps.version.outputs.VERSION }}
+          body: |
+            ## Robot Templates Release
+            
+            This release contains the following templates:
+            - **01-python**: Python - Minimal
+            - **02-python-browser**: Python - Browser automation with Playwright
+            - **03-python-work-items**: Python - Producer-Consumer with Custom Adapters
+            - **04-python-assistant-ai**: Python - Assistant AI Chat
+            
+            ### Usage
+            ```bash
+            rcc robot initialize -t 01-python
+            ```
+          files: |
+            dist/templates.zip
+            dist/templates.yaml
+          draft: false
+          prerelease: false
