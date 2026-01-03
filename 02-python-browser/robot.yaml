@@ -2,7 +2,7 @@
 # https://github.com/joshyorko/rcc/blob/master/docs/recipes.md#what-is-in-robotyaml
 
 tasks:
-  Browser Example:
+  BrowserExample:
     shell: python -m robocorp.tasks run tasks.py
 
 environmentConfigs:

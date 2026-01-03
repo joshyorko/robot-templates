@@ -1,4 +1,5 @@
 import os
+import platform
 from pathlib import Path
 
 import requests
@@ -11,6 +12,39 @@ EXCEL_URL = f"https://rpachallenge.com/assets/downloadFiles/{FILE_NAME}"
 OUTPUT_DIR = Path(os.getenv("ROBOT_ARTIFACTS", "output"))
 
 
+def get_browser_config() -> dict:
+    """
+    Get browser configuration based on environment and platform.
+    
+    The chromium_headless_shell can crash with SIGSEGV on some Linux systems
+    (especially Fedora/Silverblue). This function provides sensible defaults:
+    - Uses Firefox on Linux for better stability in headless mode
+    - Uses Chromium on other platforms
+    - Respects BROWSER_ENGINE and HEADLESS environment variables for overrides
+    """
+    headless = os.getenv("HEADLESS", "true").lower() != "false"
+    
+    # Allow explicit browser engine override via environment variable
+    browser_engine = os.getenv("BROWSER_ENGINE", "").lower()
+    if browser_engine in ("chromium", "firefox", "webkit"):
+        return {
+            "browser_engine": browser_engine,
+            "headless": headless,
+        }
+    
+    # Default: use Firefox on Linux (more stable), Chromium elsewhere
+    if platform.system() == "Linux" and headless:
+        return {
+            "browser_engine": "firefox",
+            "headless": headless,
+        }
+    
+    return {
+        "browser_engine": "chromium",
+        "headless": headless,
+    }
+
+
 @task
 def solve_challenge():
     """
@@ -19,10 +53,11 @@ def solve_challenge():
     Downloads the source data Excel file and uses Playwright to fill the entries inside
     rpachallenge.com.
     """
+    config = get_browser_config()
+    print(config)
     browser.configure(
-        browser_engine="chromium",
         screenshot="only-on-failure",
-        headless=True,
+        **config,
     )
     try:
         # Reads a table from an Excel file hosted online.
