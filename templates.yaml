@@ -6,3 +6,4 @@ templates:
     02-python-browser: Python - Browser automation with Playwright
     03-python-work-items: Python - Producer-Consumer
     04-python-assistant-ai: Python - Assistant AI Chat
+    05-python-action-server-work-items: Python - Action Server Work Items
