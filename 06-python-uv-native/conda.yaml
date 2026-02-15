@@ -2,8 +2,10 @@
 # https://github.com/joshyorko/rcc/blob/master/docs/recipes.md#what-is-in-condayaml
 # Tip: Adding a link to the release notes of the packages helps maintenance and security.
 
-channels:
-  - conda-forge
+# Conda Forge has intentionally been removed because this template uses RCC's uv-native mode:
+# with no `channels`, RCC installs `python` and `uv` directly (no micromamba/conda-forge),
+# and all non-core packages should be declared under `pip:`.
+
 
 dependencies:
   - python=3.12.11                 # https://pyreadiness.org/3.10

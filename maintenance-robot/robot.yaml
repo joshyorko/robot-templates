@@ -1,0 +1,27 @@
+# For more details on the format and content:
+# https://github.com/robocorp/rcc/blob/master/docs/recipes.md#what-is-in-robotyaml
+
+tasks:
+  # Full maintenance run - updates package pins in template conda files
+  maintenance:
+    shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t maintenance
+
+  # Update package pins only
+  update-downloads:
+    shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t update_downloads_only
+
+environmentConfigs:
+  - output/environment_linux_amd64_freeze.yaml
+  - output/environment_windows_amd64_freeze.yaml
+  - output/environment_darwin_amd64_freeze.yaml
+  - conda.yaml
+
+artifactsDir: output
+
+PATH:
+  - .
+PYTHONPATH:
+  - .
+  - src
+ignoreFiles:
+  - .gitignore

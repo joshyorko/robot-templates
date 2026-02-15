@@ -1,0 +1,216 @@
+{
+  "uv": {
+    "source": "pypi",
+    "package": "uv",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "01-python/conda.yaml", "patterns": ["uv=(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "02-python-browser/conda.yaml", "patterns": ["uv=(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["uv=(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "04-python-assistant-ai/conda.yaml", "patterns": ["uv=(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["uv=(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "06-python-uv-native/conda.yaml", "patterns": ["uv=(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "maintenance-robot/conda.yaml", "patterns": ["uv=(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "robocorp": {
+    "source": "pypi",
+    "package": "robocorp",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "01-python/conda.yaml", "patterns": ["robocorp==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "02-python-browser/conda.yaml", "patterns": ["robocorp==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["robocorp==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "04-python-assistant-ai/conda.yaml", "patterns": ["robocorp==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["robocorp==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "06-python-uv-native/conda.yaml", "patterns": ["robocorp==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "robocorp-tasks": {
+    "source": "pypi",
+    "package": "robocorp-tasks",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "maintenance-robot/conda.yaml", "patterns": ["robocorp-tasks==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "robocorp-browser": {
+    "source": "pypi",
+    "package": "robocorp-browser",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "01-python/conda.yaml", "patterns": ["robocorp-browser==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "02-python-browser/conda.yaml", "patterns": ["robocorp-browser==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "04-python-assistant-ai/conda.yaml", "patterns": ["robocorp-browser==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "06-python-uv-native/conda.yaml", "patterns": ["robocorp-browser==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "rpaframework": {
+    "source": "pypi",
+    "package": "rpaframework",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "01-python/conda.yaml", "patterns": ["rpaframework==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "02-python-browser/conda.yaml", "patterns": ["rpaframework==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "04-python-assistant-ai/conda.yaml", "patterns": ["rpaframework==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "06-python-uv-native/conda.yaml", "patterns": ["rpaframework==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "robocorp-truststore": {
+    "source": "pypi",
+    "package": "robocorp-truststore",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "02-python-browser/conda.yaml", "patterns": ["robocorp-truststore==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["robocorp-truststore==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "04-python-assistant-ai/conda.yaml", "patterns": ["robocorp-truststore==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["robocorp-truststore==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "maintenance-robot/conda.yaml", "patterns": ["robocorp-truststore==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "rpaframework-assistant": {
+    "source": "pypi",
+    "package": "rpaframework-assistant",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["rpaframework-assistant==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "04-python-assistant-ai/conda.yaml", "patterns": ["rpaframework-assistant==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["rpaframework-assistant==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "requests": {
+    "source": "pypi",
+    "package": "requests",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "02-python-browser/conda.yaml", "patterns": ["requests==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["requests==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["requests==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "maintenance-robot/conda.yaml", "patterns": ["requests==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "gitpython": {
+    "source": "pypi",
+    "package": "gitpython",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["gitpython==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["gitpython==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "pandas": {
+    "source": "pypi",
+    "package": "pandas",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["pandas==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["pandas==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "beautifulsoup4": {
+    "source": "pypi",
+    "package": "beautifulsoup4",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["beautifulsoup4==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["beautifulsoup4==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "jinja2": {
+    "source": "pypi",
+    "package": "jinja2",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["jinja2==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["jinja2==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "redis": {
+    "source": "pypi",
+    "package": "redis",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["redis==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["redis==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "psycopg2-binary": {
+    "source": "pypi",
+    "package": "psycopg2-binary",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["psycopg2-binary==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["psycopg2-binary==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "sqlalchemy": {
+    "source": "pypi",
+    "package": "sqlalchemy",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["SQLAlchemy==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["SQLAlchemy==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "pymongo": {
+    "source": "pypi",
+    "package": "pymongo",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["pymongo==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["pymongo==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "robocorp-adapters-custom": {
+    "source": "pypi",
+    "package": "robocorp-adapters-custom",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["robocorp-adapters-custom==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "actions-work-items": {
+    "source": "pypi",
+    "package": "actions-work-items",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["actions-work-items==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "openai": {
+    "source": "pypi",
+    "package": "openai",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "04-python-assistant-ai/conda.yaml", "patterns": ["openai==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  },
+  "python-dotenv": {
+    "source": "pypi",
+    "package": "python-dotenv",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {"file": "04-python-assistant-ai/conda.yaml", "patterns": ["python-dotenv==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
+    ]
+  }
+}
