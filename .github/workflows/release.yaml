@@ -47,7 +47,7 @@ jobs:
         run: |
           # Pre-warm holotree environments for each template
           for dir in */; do
-            if [[ "$dir" == .* ]] || [[ "$dir" == "dist/" ]]; then
+            if [[ "$dir" == .* ]] || [[ "$dir" == "dist/" ]] || [[ "$dir" == "maintenance-robot/" ]]; then
               continue
             fi
             if [ -f "${dir}robot.yaml" ]; then
@@ -104,8 +104,8 @@ jobs:
           
           # Wrap each template directory that contains a robot.yaml
           for dir in */; do
-            # Skip hidden dirs, dist, and non-template directories
-            if [[ "$dir" == .* ]] || [[ "$dir" == "dist/" ]]; then
+            # Skip hidden dirs, dist, maintenance-robot, and non-template directories
+            if [[ "$dir" == .* ]] || [[ "$dir" == "dist/" ]] || [[ "$dir" == "maintenance-robot/" ]]; then
               continue
             fi
             
@@ -165,6 +165,8 @@ jobs:
             - **02-python-browser**: Python - Browser automation with Playwright
             - **03-python-work-items**: Python - Producer-Consumer with Custom Adapters
             - **04-python-assistant-ai**: Python - Assistant AI Chat
+            - **05-python-action-server-work-items**: Python - Action Server Work Items
+            - **06-python-uv-native**: Python - UV Native
             
             ### Usage
             ```bash
