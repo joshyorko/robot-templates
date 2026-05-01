@@ -24,12 +24,30 @@ for item in workitems.inputs:
 Yorko Control Room adapter examples are intentionally not included here. This
 template is for the portable `actions-work-items` adapters.
 
-## Quick Start
+## Run From The Robot Root
+
+All RCC commands below assume your shell is already in this directory:
+
+```bash
+cd 05-python-action-server-work-items
+```
+
+If your generated project is named `test-actions`, run `cd test-actions` first.
+Once you are inside that directory, env files are referenced as
+`devdata/<file>.json`. Do not prefix them with `test-actions/`.
+
+The `-e` flag is required for every workflow task here. It loads the adapter
+env JSON for that exact stage. For the file adapter, env paths are directories
+that contain `work-items.json`; never point `RC_WORKITEM_INPUT_PATH` or
+`RC_WORKITEM_OUTPUT_PATH` at the JSON file itself.
+
+## Quick Smoke
 
 Run the deterministic local smoke first:
 
 ```bash
-rcc task run --dev -t SmokeLocalAdapters
+rcc run --dev -t SmokeFile -e devdata/env-for-producer.json
+rcc run --dev -t SmokeSQLite -e devdata/env-sqlite-producer.json
 ```
 
 That checks File and SQLite without external services.
@@ -38,7 +56,8 @@ For Redis and MongoDB/DocumentDB:
 
 ```bash
 docker compose up -d redis mongodb
-rcc task run --dev -t SmokeServiceAdapters
+rcc run --dev -t SmokeRedis -e devdata/env-redis-producer.json
+rcc run --dev -t SmokeDocDB -e devdata/env-docdb-local-producer.json
 ```
 
 Useful local UIs:
@@ -48,43 +67,54 @@ Useful local UIs:
 
 ## Run the Workflow
 
-Seed one input item, then run producer, consumer, and reporter. SQLite is the
-lowest-friction local path:
+Seed one input item, then run producer, consumer, and reporter. Every command
+uses the env file for the stage it is running.
+
+SQLite is the lowest-friction local database path:
 
 ```bash
-rcc task run --dev -t SeedSQLiteDB
-rcc task run -e devdata/env-sqlite-producer.json -t Producer
-rcc task run -e devdata/env-sqlite-consumer.json -t Consumer
-rcc task run -e devdata/env-sqlite-for-reporter.json -t Reporter
+rcc run --dev -t SeedSQLiteDB -e devdata/env-sqlite-producer.json
+rcc run -t Producer -e devdata/env-sqlite-producer.json
+rcc run -t Consumer -e devdata/env-sqlite-consumer.json
+rcc run -t Reporter -e devdata/env-sqlite-for-reporter.json
 ```
 
 File adapter:
 
 ```bash
-rcc task run --dev -t SeedFile
-rcc task run -e devdata/env-for-producer.json -t Producer
-rcc task run -e devdata/env-for-consumer.json -t Consumer
-rcc task run -e devdata/env-for-reporter.json -t Reporter
+rcc run --dev -t SeedFile -e devdata/env-for-producer.json
+rcc run -t Producer -e devdata/env-for-producer.json
+rcc run -t Consumer -e devdata/env-for-consumer.json
+rcc run -t Reporter -e devdata/env-for-reporter.json
 ```
 
 Redis:
 
 ```bash
 docker compose up -d redis
-rcc task run --dev -t SeedRedisDB
-rcc task run -e devdata/env-redis-producer.json -t Producer
-rcc task run -e devdata/env-redis-consumer.json -t Consumer
-rcc task run -e devdata/env-redis-reporter.json -t Reporter
+rcc run --dev -t SeedRedisDB -e devdata/env-redis-producer.json
+rcc run -t Producer -e devdata/env-redis-producer.json
+rcc run -t Consumer -e devdata/env-redis-consumer.json
+rcc run -t Reporter -e devdata/env-redis-reporter.json
 ```
 
 MongoDB / DocumentDB:
 
 ```bash
 docker compose up -d mongodb
-rcc task run --dev -t SeedDocDB
-rcc task run -e devdata/env-docdb-local-producer.json -t Producer
-rcc task run -e devdata/env-docdb-local-consumer.json -t Consumer
-rcc task run -e devdata/env-docdb-local-reporter.json -t Reporter
+rcc run --dev -t SeedDocDB -e devdata/env-docdb-local-producer.json
+rcc run -t Producer -e devdata/env-docdb-local-producer.json
+rcc run -t Consumer -e devdata/env-docdb-local-consumer.json
+rcc run -t Reporter -e devdata/env-docdb-local-reporter.json
+```
+
+To inspect a queue, use the env file for the queue you want to read:
+
+```bash
+rcc run --dev -t ListWorkItems -e devdata/env-for-producer.json
+rcc run --dev -t ListWorkItems -e devdata/env-sqlite-producer.json
+rcc run --dev -t ListWorkItems -e devdata/env-redis-producer.json
+rcc run --dev -t ListWorkItems -e devdata/env-docdb-local-producer.json
 ```
 
 ## Queue Ladder
