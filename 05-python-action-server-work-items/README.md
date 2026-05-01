@@ -1,156 +1,134 @@
 # Python Action Server Work Items
 
-A producer-consumer automation template using `actions-work-items` for the Sema4.ai Action Server.
+Producer-consumer-reporter template using `actions-work-items`.
 
-## Overview
-
-This template demonstrates the producer-consumer pattern using the [`actions-work-items`](https://pypi.org/project/actions-work-items/) package, which provides work item management integrated with the Sema4.ai Action Server.
-
-### Key Difference from `robocorp-workitems`
-
-| Feature | `robocorp-workitems` | `actions-work-items` |
-|---------|---------------------|----------------------|
-| Storage | Control Room / Custom Adapters | Action Server SQLite |
-| Import | `from robocorp import workitems` | `from actions.work_items import inputs, outputs` |
-| Database | Configurable (Redis, MongoDB, SQLite) | Centralized `{datadir}/workitems.db` |
-| Management | External | Built into Action Server |
-
-## How It Works
-
-### The Handoff Mechanism
-
-1. **Shared SQLite Database**: Both producer and consumer use the same `workitems.db` file stored in the action server's datadir
-2. **Queue Linking**:
-   - Producer writes to an output queue (e.g., `default_output`)
-   - Consumer reads from that queue as its input queue
-
-### Architecture
-
-```
-┌─────────────┐     ┌─────────────────┐     ┌─────────────┐
-│   Producer  │────►│  workitems.db   │────►│  Consumer   │
-│   (writes)  │     │  (SQLite)       │     │   (reads)   │
-└─────────────┘     └─────────────────┘     └─────────────┘
-                            │
-                            ▼
-                    ┌─────────────┐
-                    │  Reporter   │
-                    │ (aggregates)│
-                    └─────────────┘
-```
-
-## Migration from `robocorp-workitems`
-
-### 1. Update `conda.yaml` / `package.yaml`
-
-```yaml
-dependencies:
-  - pip:
-      # OLD
-      # - robocorp-workitems>=1.0.0
-      # NEW
-      - actions-work-items>=0.2.0
-```
-
-### 2. Update imports
+This template keeps the Robocorp-shaped API:
 
 ```python
-# OLD
-from robocorp import workitems
+from actions import workitems
 
-# NEW
-from actions.work_items import inputs, outputs
-```
-
-### 3. Update code patterns
-
-```python
-# OLD (robocorp-workitems)
 for item in workitems.inputs:
-    payload = item.payload
-    # process...
-    workitems.outputs.create(result)
-    item.done()
-
-# NEW (actions-work-items)
-for item in inputs:
-    payload = item.payload
-    # process...
-    outputs.create(payload=result)
-    item.done()
+    with item:
+        workitems.outputs.create({"processed": True, "source": item.payload})
 ```
 
-### 4. Configure environment variables
+## Backends
+
+| Backend | Adapter | Needs Docker |
+| --- | --- | --- |
+| File | `FileAdapter` | No |
+| SQLite | `actions.work_items.SQLiteAdapter` | No |
+| Redis | `actions.work_items.RedisAdapter` | Yes |
+| MongoDB / DocumentDB | `actions.work_items.DocumentDBAdapter` | Yes |
+
+Yorko Control Room adapter examples are intentionally not included here. This
+template is for the portable `actions-work-items` adapters.
+
+## Quick Start
+
+Run the deterministic local smoke first:
 
 ```bash
-# Producer
-export RC_WORKITEM_OUTPUT_QUEUE_NAME=my_queue
-
-# Consumer (reads from producer's output)
-export RC_WORKITEM_QUEUE_NAME=my_queue
+rcc task run --dev -t SmokeLocalAdapters
 ```
 
-## Usage
+That checks File and SQLite without external services.
 
-### With Action Server
+For Redis and MongoDB/DocumentDB:
 
 ```bash
-# Start the action server
-action-server start --actions-sync
-
-# The action server exposes:
-# - GET /api/work-items - List all work items
-# - GET /api/work-items/stats - Queue statistics  
-# - POST /api/work-items - Seed a new work item
+docker compose up -d redis mongodb
+rcc task run --dev -t SmokeServiceAdapters
 ```
 
-### With RCC (for development)
+Useful local UIs:
+
+- RedisInsight: http://localhost:5540
+- Mongo Express: http://localhost:8081
+
+## Run the Workflow
+
+Seed one input item, then run producer, consumer, and reporter. SQLite is the
+lowest-friction local path:
 
 ```bash
-# Run the producer (creates work items)
-rcc run -t Producer
-
-# Run the consumer (processes work items)
-rcc run -t Consumer
-
-# Run the reporter (generates summary)
-rcc run -t Reporter
+rcc task run --dev -t SeedSQLiteDB
+rcc task run -e devdata/env-sqlite-producer.json -t Producer
+rcc task run -e devdata/env-sqlite-consumer.json -t Consumer
+rcc task run -e devdata/env-sqlite-for-reporter.json -t Reporter
 ```
 
-### Environment Variables
+File adapter:
 
-| Variable | Description | Used By |
-|----------|-------------|---------|
-| `RC_WORKITEM_QUEUE_NAME` | Queue to read work items from | Consumer, Reporter |
-| `RC_WORKITEM_OUTPUT_QUEUE_NAME` | Queue to write work items to | Producer, Consumer |
-
-## Project Structure
-
+```bash
+rcc task run --dev -t SeedFile
+rcc task run -e devdata/env-for-producer.json -t Producer
+rcc task run -e devdata/env-for-consumer.json -t Consumer
+rcc task run -e devdata/env-for-reporter.json -t Reporter
 ```
+
+Redis:
+
+```bash
+docker compose up -d redis
+rcc task run --dev -t SeedRedisDB
+rcc task run -e devdata/env-redis-producer.json -t Producer
+rcc task run -e devdata/env-redis-consumer.json -t Consumer
+rcc task run -e devdata/env-redis-reporter.json -t Reporter
+```
+
+MongoDB / DocumentDB:
+
+```bash
+docker compose up -d mongodb
+rcc task run --dev -t SeedDocDB
+rcc task run -e devdata/env-docdb-local-producer.json -t Producer
+rcc task run -e devdata/env-docdb-local-consumer.json -t Consumer
+rcc task run -e devdata/env-docdb-local-reporter.json -t Reporter
+```
+
+## Queue Ladder
+
+The env files make each stage explicit:
+
+```text
+fetch_repos -> fetch_repos_output -> fetch_repos_report -> fetch_repos_done
+```
+
+Producers and consumers create outputs only while processing a reserved input
+item. Use `scripts/seed_workitems.py` or the `Seed*` dev tasks to create the
+initial input item.
+
+## Files
+
+```text
 05-python-action-server-work-items/
-├── tasks.py              # Producer/Consumer/Reporter actions
-├── robot.yaml            # Task definitions
-├── conda.yaml            # Python dependencies
-├── README.md             # This file
-├── LICENSE               # MIT License
-└── devdata/              # Development test data
-    └── work-items-in/
-        └── input-for-producer/
-            └── work-items.json
+├── docker-compose.yml                  # Redis, RedisInsight, MongoDB, Mongo Express
+├── tasks.py                            # producer / consumer / reporter
+├── robot.yaml                          # RCC tasks and devTasks
+├── conda.yaml                          # actions-work-items[all]
+├── devdata/
+│   ├── env-for-*.json                  # FileAdapter
+│   ├── env-sqlite-*.json               # SQLite
+│   ├── env-redis-*.json                # Redis
+│   └── env-docdb-local-*.json          # MongoDB / DocumentDB
+└── scripts/
+    ├── seed_workitems.py               # backend-neutral seeding
+    └── smoke_workitems.py              # adapter smoke checks
 ```
 
-## API Endpoints (Action Server)
+## Action Server
 
-When running with the Sema4.ai Action Server, these endpoints are available for debugging and monitoring:
+When running inside Action Server, this package exposes work item state through
+the normal Action Server work item API:
 
 | Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/work-items` | GET | List all work items in the database |
-| `/api/work-items/stats` | GET | Get queue statistics |
-| `/api/work-items` | POST | Seed a new work item manually |
+| --- | --- | --- |
+| `/api/work-items` | GET | List work items |
+| `/api/work-items/stats` | GET | Queue statistics |
+| `/api/work-items` | POST | Seed a work item |
 
-## Documentation Resources
+## References
 
-- [actions-work-items](https://pypi.org/project/actions-work-items/) - Work items for Action Server
-- [Sema4.ai Action Server](https://github.com/Sema4AI/actions) - Action Server documentation
-- [RCC Documentation](https://github.com/robocorp/rcc/blob/master/docs/README.md) - Runtime environment manager
+- [actions-work-items](https://pypi.org/project/actions-work-items/)
+- [RCC recipes](https://github.com/joshyorko/rcc/blob/master/docs/recipes.md)

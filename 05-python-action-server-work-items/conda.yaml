@@ -12,7 +12,7 @@ dependencies:
       - robocorp==3.0.0 # https://pypi.org/project/robocorp
       - robocorp-truststore==0.9.1 # https://pypi.org/project/robocorp-truststore
       - rpaframework-assistant==5.0.0 # https://pypi.org/project/rpaframework-assistant
-      - actions-work-items==0.2.1 # https://pypi.org/project/actions-work-items
+      - actions-work-items[all]==0.2.4 # https://pypi.org/project/actions-work-items
 
       - requests==2.32.5 # https://pypi.org/project/requests
       - gitpython==3.1.46 # https://pypi.org/project/GitPython
