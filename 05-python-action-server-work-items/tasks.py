@@ -1,7 +1,7 @@
 from pathlib import Path
 from robocorp import log
 from robocorp.tasks import get_output_dir, task
-from actions.work_items import inputs, outputs
+from actions import workitems
 import shutil
 import os
 from git import Repo
@@ -9,17 +9,17 @@ from git.exc import GitCommandError
 import json
 import time
 
-TimeoutException = Exception  # type: ignore
-
 # Import utility functions and fixtures from tools module
 from scripts.tools import task_context, get_org_name, repos
+
+TimeoutException = Exception  # type: ignore
 
 
 @task
 def producer():
     """Fetches repositories from GitHub org and creates work items."""
     # Process input work items to get organization name
-    for item in inputs:
+    for item in workitems.inputs:
         try:
             payload = item.payload
             if not isinstance(payload, dict):
@@ -80,7 +80,7 @@ def producer():
                             continue
 
                         # Create work item
-                        outputs.create(repo_payload)
+                        workitems.outputs.create(repo_payload)
                         created_count += 1
 
                     except Exception as e:
@@ -134,7 +134,7 @@ def consumer():
     # Extract org name from first work item or environment variable
     org_name = get_org_name()
 
-    for item in inputs:
+    for item in workitems.inputs:
         try:
             payload = item.payload
             if not isinstance(payload, dict):
@@ -177,7 +177,7 @@ def consumer():
                 processed_repos.append(
                     {"name": repo_name, "url": url, "status": "already_exists"}
                 )
-                outputs.create(
+                workitems.outputs.create(
                     {
                         "name": repo_name,
                         "url": url,
@@ -222,7 +222,7 @@ def consumer():
                 git_repos.append(repo_path)  # Add to cleanup list
 
                 # Create output work item for success
-                outputs.create(
+                workitems.outputs.create(
                     {
                         "name": repo_name,
                         "url": url,
@@ -266,7 +266,7 @@ def consumer():
                         }
                     )
                     # Create output work item for released
-                    outputs.create(
+                    workitems.outputs.create(
                         {
                             "name": repo_name,
                             "url": url,
@@ -286,7 +286,7 @@ def consumer():
                         }
                     )
                     # Create output work item for failure
-                    outputs.create(
+                    workitems.outputs.create(
                         {
                             "name": repo_name,
                             "url": url,
@@ -365,7 +365,7 @@ def reporter():
         "repositories": [],
     }
 
-    for item in inputs:
+    for item in workitems.inputs:
         try:
             payload = item.payload
             if not isinstance(payload, dict):

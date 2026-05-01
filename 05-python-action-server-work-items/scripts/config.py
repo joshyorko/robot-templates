@@ -34,23 +34,18 @@ def get_adapter_config() -> Dict[str, object]:
         "db_path": os.getenv("RC_WORKITEM_DB_PATH", ""),
 
         # Redis configuration
-        "redis_host": os.getenv("REDIS_HOST", "localhost"),
-        "redis_port": int(os.getenv("REDIS_PORT", "6379")),
-        "redis_db": int(os.getenv("REDIS_DB", "0")),
-        "redis_password": os.getenv("REDIS_PASSWORD"),
-        "redis_max_connections": int(os.getenv("REDIS_MAX_CONNECTIONS", "50")),
+        "redis_url": os.getenv("RC_REDIS_URL", "redis://localhost:6379/0"),
 
-        # PostgreSQL configuration
-        "postgres_connection_string": os.getenv("POSTGRES_CONNECTION_STRING", ""),
-        "postgres_pool_size": int(os.getenv("POSTGRES_POOL_SIZE", "10")),
-        "postgres_max_overflow": int(os.getenv("POSTGRES_MAX_OVERFLOW", "20")),
+        # DocumentDB / MongoDB configuration
+        "docdb_uri": os.getenv("DOCDB_URI", ""),
+        "docdb_database": os.getenv("DOCDB_DATABASE", ""),
     }
 
     # Validate required configuration early for clarity
     if not config["adapter_class"]:
         raise ValueError(
             "RC_WORKITEM_ADAPTER environment variable is required. "
-            "Example: custom_adapters.sqlite_adapter.SQLiteAdapter"
+            "Example: actions.work_items.SQLiteAdapter"
         )
 
     return config
@@ -72,17 +67,17 @@ def validate_adapter_config(adapter_class: str, config: Dict[str, object]) -> No
             )
 
     elif "redis" in acl:
-        if not config.get("redis_host"):
+        if not config.get("redis_url"):
             raise ValueError(
-                "REDIS_HOST environment variable required for Redis adapter. "
-                "Example: localhost"
+                "RC_REDIS_URL environment variable required for Redis adapter. "
+                "Example: redis://localhost:6379/0"
             )
 
-    elif "postgres" in acl or "postgresql" in acl:
-        if not config.get("postgres_connection_string"):
+    elif "docdb" in acl or "documentdb" in acl:
+        if not config.get("docdb_uri") or not config.get("docdb_database"):
             raise ValueError(
-                "POSTGRES_CONNECTION_STRING environment variable required for PostgreSQL adapter. "
-                "Example: postgresql://user:password@localhost:5432/workitems"
+                "DOCDB_URI and DOCDB_DATABASE are required for DocumentDB adapter. "
+                "Example: mongodb://qauser:qapassword@localhost:27017/?authSource=admin"
             )
 
 

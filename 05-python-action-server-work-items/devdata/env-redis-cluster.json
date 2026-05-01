@@ -1,14 +1,9 @@
 {
-  "_comment": "Redis Cluster configuration example for high availability",
-  "RC_WORKITEM_ADAPTER": "robocorp_adapters_custom.redis_adapter.RedisAdapter",
-  "REDIS_HOST": "redis-cluster-node-1.example.com,redis-cluster-node-2.example.com,redis-cluster-node-3.example.com",
-  "REDIS_PORT": "6379",
-  "REDIS_DB": "0",
-  "REDIS_PASSWORD": "${REDIS_PASSWORD}",
-  "REDIS_MAX_CONNECTIONS": "100",
+  "_comment": "Redis URL example for a managed Redis-compatible service.",
+  "RC_WORKITEM_ADAPTER": "actions.work_items.RedisAdapter",
+  "RC_REDIS_URL": "redis://:${REDIS_PASSWORD}@redis.example.com:6379/0",
   "RC_WORKITEM_QUEUE_NAME": "production_queue",
+  "RC_WORKITEM_OUTPUT_QUEUE_NAME": "production_queue_output",
   "RC_WORKITEM_FILES_DIR": "/mnt/shared/work_item_files",
-  "RC_WORKITEM_ORPHAN_TIMEOUT_MINUTES": "30",
-  "REDIS_CLUSTER_ENABLED": "true",
-  "REDIS_CLUSTER_NODES": "redis-cluster-node-1.example.com:6379,redis-cluster-node-2.example.com:6379,redis-cluster-node-3.example.com:6379"
+  "RC_WORKITEM_ORPHAN_TIMEOUT_MINUTES": "30"
 }

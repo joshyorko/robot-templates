@@ -11,12 +11,28 @@ tasks:
 
 
 devTasks:
+  SeedFile:
+    shell: python scripts/seed_workitems.py --env devdata/env-for-producer.json
   SeedSQLiteDB:
-    shell: python scripts/seed_sqlite_db.py
+    shell: python scripts/seed_workitems.py --env devdata/env-sqlite-producer.json
   SeedRedisDB:
-    shell: python scripts/seed_redis_db.py
+    shell: python scripts/seed_workitems.py --env devdata/env-redis-producer.json
   SeedDocDB:
-    shell: python scripts/seed_docdb.py
+    shell: python scripts/seed_workitems.py --env devdata/env-docdb-local-producer.json
+  SmokeFile:
+    shell: python scripts/smoke_workitems.py --adapter file
+  SmokeSQLite:
+    shell: python scripts/smoke_workitems.py --adapter sqlite
+  SmokeRedis:
+    shell: python scripts/smoke_workitems.py --adapter redis
+  SmokeDocDB:
+    shell: python scripts/smoke_workitems.py --adapter docdb
+  SmokeLocalAdapters:
+    shell: python scripts/smoke_workitems.py --adapter file --adapter sqlite
+  SmokeServiceAdapters:
+    shell: python scripts/smoke_workitems.py --adapter redis --adapter docdb
+  SmokeAllAdapters:
+    shell: python scripts/smoke_workitems.py --adapter file --adapter sqlite --adapter redis --adapter docdb
   CheckSQLiteDB:
     shell: python scripts/check_sqlite_db.py
   RecoverOrphanedItems:
