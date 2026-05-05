@@ -53,7 +53,7 @@ jobs:
             if [ -f "${dir}robot.yaml" ]; then
               name=$(basename "$dir")
               echo "Warming holotree for: $name"
-              rcc holotree variables -r "${dir}robot.yaml" || true
+              rcc holotree variables -r "${dir}robot.yaml" --silent || true
             fi
           done
           rcc holotree list || true
