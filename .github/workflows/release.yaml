@@ -13,6 +13,7 @@ on:
 
 env:
   RCC_VERSION: v18.17.3
+  RCC_CACHE_VERSION: v2
   ROBOCORP_HOME: ${{ github.workspace }}/.rcc_home
 
 jobs:
@@ -35,10 +36,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.ROBOCORP_HOME }}
-          key: rcc-home-${{ runner.os }}-${{ env.RCC_VERSION }}-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
+          key: rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-${{ env.RCC_VERSION }}-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
           restore-keys: |
-            rcc-home-${{ runner.os }}-${{ env.RCC_VERSION }}-
-            rcc-home-${{ runner.os }}-
+            rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-${{ env.RCC_VERSION }}-
 
       - name: Disable RCC telemetry
         run: rcc config identity -t
@@ -90,10 +90,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.ROBOCORP_HOME }}
-          key: rcc-home-${{ runner.os }}-${{ env.RCC_VERSION }}-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
+          key: rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-${{ env.RCC_VERSION }}-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
           restore-keys: |
-            rcc-home-${{ runner.os }}-${{ env.RCC_VERSION }}-
-            rcc-home-${{ runner.os }}-
+            rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-${{ env.RCC_VERSION }}-
 
       - name: Disable RCC telemetry
         run: rcc config identity -t

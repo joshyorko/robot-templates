@@ -15,6 +15,7 @@ on:
 env:
   # Point to your cloud rccremote (nginx front), public DNS with valid TLS
   RCC_REMOTE_ORIGIN: https://rccremote.example.com:443
+  RCC_CACHE_VERSION: v2
   # Put holotree/spaces somewhere writeable and cacheable
   ROBOCORP_HOME: ${{ github.workspace }}/.rcc_home
 
@@ -45,10 +46,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.ROBOCORP_HOME }}
-          key: rcc-home-${{ runner.os }}-rcclatest-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
+          key: rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-rcclatest-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
           restore-keys: |
-            rcc-home-${{ runner.os }}-rcclatest-
-            rcc-home-${{ runner.os }}-
+            rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-rcclatest-
 
       - name: Disable RCC telemetry
         run: rcc config identity -t
@@ -128,10 +128,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.ROBOCORP_HOME }}
-          key: rcc-home-${{ runner.os }}-rcclatest-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
+          key: rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-rcclatest-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
           restore-keys: |
-            rcc-home-${{ runner.os }}-rcclatest-
-            rcc-home-${{ runner.os }}-
+            rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-rcclatest-
 
       - name: Disable RCC telemetry
         run: rcc config identity -t
@@ -213,10 +212,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.ROBOCORP_HOME }}
-          key: rcc-home-${{ runner.os }}-rcclatest-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
+          key: rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-rcclatest-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
           restore-keys: |
-            rcc-home-${{ runner.os }}-rcclatest-
-            rcc-home-${{ runner.os }}-
+            rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-rcclatest-
 
       - name: Disable RCC telemetry
         run: rcc config identity -t
@@ -313,10 +311,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.ROBOCORP_HOME }}
-          key: rcc-home-${{ runner.os }}-rcclatest-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
+          key: rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-rcclatest-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
           restore-keys: |
-            rcc-home-${{ runner.os }}-rcclatest-
-            rcc-home-${{ runner.os }}-
+            rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-rcclatest-
 
       - name: Disable RCC telemetry
         run: rcc config identity -t
