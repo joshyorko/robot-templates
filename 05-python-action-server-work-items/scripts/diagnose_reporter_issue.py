@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Diagnose why Reporter is showing incorrect statistics."""
+"""Inspect SQLite queue shapes used by the producer-consumer-reporter flow."""
 
 import json
 import sqlite3
@@ -16,23 +16,22 @@ conn = sqlite3.connect(db_path)
 conn.row_factory = sqlite3.Row
 
 print(f"\n{'='*80}")
-print(f"Reporter Issue Diagnosis")
+print("Reporter Queue Diagnosis")
 print(f"{'='*80}\n")
 
-# Get all work items in the Consumer's output queue
 cursor = conn.execute("""
     SELECT id, queue_name, state, payload
     FROM work_items
-    WHERE queue_name LIKE '%output%'
+    WHERE queue_name IN ('fetch_repos_output', 'fetch_repos_report')
     ORDER BY created_at DESC
 """)
 
-print("Work Items in Output Queues:")
+print("Work Items in Producer/Consumer Output Queues:")
 print("-" * 80)
 
 producer_format_count = 0
 consumer_format_count = 0
-reporter_items = 0
+unknown_count = 0
 
 for row in cursor:
     payload = json.loads(row['payload'])
@@ -41,35 +40,31 @@ for row in cursor:
     print(f"  State: {row['state']}")
     print(f"  Payload keys: {list(payload.keys())}")
 
-    # Check format
-    if payload.get("TYPE") == "Reporter":
-        reporter_items += 1
-        print(f"  Format: Reporter metadata item")
-    elif payload.get("callid") and payload.get("evaluationTemplateId"):
+    if payload.get("Name") and payload.get("URL"):
         producer_format_count += 1
-        print(f"  Format: Producer format (callid + evaluationTemplateId)")
-    elif payload.get("contact_id"):
+        print("  Format: Producer output (repository to clone)")
+    elif payload.get("name") and payload.get("status"):
         consumer_format_count += 1
-        print(f"  Format: Consumer format (contact_id)")
+        print("  Format: Consumer output (repository result)")
     else:
-        print(f"  Format: Unknown")
+        unknown_count += 1
+        print("  Format: Unknown")
 
 print(f"\n{'='*80}")
 print("Summary:")
 print("-" * 80)
-print(f"  Reporter metadata items: {reporter_items}")
-print(f"  Producer format items: {producer_format_count}")
-print(f"  Consumer format items: {consumer_format_count}")
+print(f"  Producer output items: {producer_format_count}")
+print(f"  Consumer output items: {consumer_format_count}")
+print(f"  Unknown items: {unknown_count}")
 print(f"\n{'='*80}")
 
 print("\nDiagnosis:")
 print("-" * 80)
-if producer_format_count == 0 and consumer_format_count > 0:
-    print("❌ ISSUE FOUND: Reporter is looking for producer format items,")
-    print("   but only consumer format items exist in the output queue.")
-    print("   The Consumer task consumes producer items and creates new outputs.")
-    print("\n✅ SOLUTION: Reporter should count consumer format items instead.")
+if producer_format_count > 0 and consumer_format_count == 0:
+    print("Producer has output items, but Consumer has not created reporter items yet.")
+elif consumer_format_count > 0:
+    print("Reporter input queue has consumer result items.")
 else:
-    print("✅ No obvious format mismatch detected.")
+    print("No producer/consumer output items found in the expected queues.")
 
 conn.close()

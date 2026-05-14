@@ -3,7 +3,7 @@
 
 tasks:
   RunTask:
-    shell: python -m robocorp.tasks run tasks.py
+    shell: python -m robocorp.tasks run tasks.py -t uv_native_smoke
 
 environmentConfigs:
   - environment_windows_amd64_freeze.yaml

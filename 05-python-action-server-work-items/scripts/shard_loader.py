@@ -10,7 +10,7 @@ def load_shard():
     shard_id = os.getenv("SHARD_ID", "0")
     
     # Read shard file
-    shard_file = Path(f"output/shards/work-items-shard-{shard_id}.json")
+    shard_file = Path(f"output/file/shards/shard-{shard_id}/work-items.json")
     if not shard_file.exists():
         print(f"Shard file not found: {shard_file}")
         sys.exit(1)

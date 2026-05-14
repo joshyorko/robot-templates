@@ -1,125 +1,170 @@
+from __future__ import annotations
+
+import json
 import os
 import platform
+from html import escape
 from pathlib import Path
 
-import requests
 from robocorp import browser
-from robocorp.tasks import task
-from RPA.Excel.Files import Files as Excel
-
-FILE_NAME = "challenge.xlsx"
-EXCEL_URL = f"https://rpachallenge.com/assets/downloadFiles/{FILE_NAME}"
-OUTPUT_DIR = Path(os.getenv("ROBOT_ARTIFACTS", "output"))
+from robocorp.tasks import get_output_dir, task
 
 
-def get_browser_config() -> dict:
-    """
-    Get browser configuration based on environment and platform.
-    
-    The chromium_headless_shell can crash with SIGSEGV on some Linux systems
-    (especially Fedora/Silverblue). This function provides sensible defaults:
-    - Uses Firefox on Linux for better stability in headless mode
-    - Uses Chromium on other platforms
-    - Respects BROWSER_ENGINE and HEADLESS environment variables for overrides
-    """
-    headless = os.getenv("HEADLESS", "true").lower() != "false"
-    
-    # Allow explicit browser engine override via environment variable
-    browser_engine = os.getenv("BROWSER_ENGINE", "").lower()
-    if browser_engine in ("chromium", "firefox", "webkit"):
-        return {
-            "browser_engine": browser_engine,
-            "headless": headless,
-        }
-    
-    # Default: use Firefox on Linux (more stable), Chromium elsewhere
+ORDERS = [
+    {"customer": "Northwind Co.", "status": "Ready", "total": 24.50},
+    {"customer": "Contoso Ops", "status": "Queued", "total": 18.75},
+    {"customer": "Fabrikam Lab", "status": "Ready", "total": 60.75},
+]
+
+EXPECTED_SUMMARY = {
+    "page_title": "Browser Automation Smoke",
+    "processed_orders": 3,
+    "ready_orders": 2,
+    "total_value": "$104.00",
+}
+
+
+def browser_config() -> dict:
+    headless = os.getenv("HEADLESS", "true").lower() not in {"0", "false", "no"}
+    requested_engine = os.getenv("BROWSER_ENGINE", "").lower()
+
+    if requested_engine in {"chromium", "firefox", "webkit"}:
+        return {"browser_engine": requested_engine, "headless": headless}
+
     if platform.system() == "Linux" and headless:
-        return {
-            "browser_engine": "firefox",
-            "headless": headless,
-        }
-    
-    return {
-        "browser_engine": "chromium",
-        "headless": headless,
-    }
+        return {"browser_engine": "firefox", "headless": headless}
+
+    return {"browser_engine": "chromium", "headless": headless}
 
 
 @task
-def solve_challenge():
-    """
-    Main task which solves the RPA challenge!
+def browser_smoke():
+    output_dir = Path(get_output_dir())
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    Downloads the source data Excel file and uses Playwright to fill the entries inside
-    rpachallenge.com.
-    """
-    config = get_browser_config()
-    print(config)
-    browser.configure(
-        screenshot="only-on-failure",
-        **config,
-    )
-    try:
-        # Reads a table from an Excel file hosted online.
-        excel_file = download_file(
-            EXCEL_URL, target_dir=OUTPUT_DIR, target_filename=FILE_NAME
-        )
-        excel = Excel()
-        excel.open_workbook(excel_file)
-        rows = excel.read_worksheet_as_table("Sheet1", header=True)
+    fixture_path = write_fixture(output_dir / "browser-smoke.html")
+    screenshot_path = output_dir / "browser-smoke.png"
+    data_path = output_dir / "browser-smoke.json"
 
-        # Surf the automation challenge website and fill in information from the table
-        #  extracted above.
-        page = browser.goto("https://rpachallenge.com/")
-        page.click("button:text('Start')")
-        for row in rows:
-            fill_and_submit_form(row, page=page)
-        element = page.locator("css=div.congratulations")
-        browser.screenshot(element)
-    finally:
-        # A place for teardown and cleanups. (Playwright handles browser closing)
-        print("Automation finished!")
+    config = browser_config()
+    browser.configure(screenshot="only-on-failure", **config)
 
+    page = browser.goto(fixture_path.resolve().as_uri())
+    page.get_by_role("button", name="Build summary").click()
 
-def download_file(url: str, *, target_dir: Path, target_filename: str) -> Path:
-    """
-    Downloads a file from the given URL into a custom folder & name.
+    summary = page.locator("[data-testid='summary']")
+    summary.wait_for(state="visible")
 
-    Args:
-        url: The target URL from which we'll download the file.
-        target_dir: The destination directory in which we'll place the file.
-        target_filename: The local file name inside which the content gets saved.
-
-    Returns:
-        Path: A Path object pointing to the downloaded file.
-    """
-    # Obtain the content of the file hosted online.
-    response = requests.get(url)
-    response.raise_for_status()  # this will raise an exception if the request fails
-    # Write the content of the request response to the target file.
-    target_dir.mkdir(exist_ok=True)
-    local_file = target_dir / target_filename
-    local_file.write_bytes(response.content)
-    return local_file
-
-
-def fill_and_submit_form(row: dict, *, page: browser.Page):
-    """
-    Fills a single form with the information of a single row from the table.
-
-    Args:
-        row: One row from the generated table out of the input Excel file.
-        page: The page object over which the browser interactions are done.
-    """
-    field_data_map = {
-        "labelFirstName": "First Name",
-        "labelLastName": "Last Name",
-        "labelCompanyName": "Company Name",
-        "labelRole": "Role in Company",
-        "labelAddress": "Address",
-        "labelEmail": "Email",
-        "labelPhone": "Phone Number",
+    result = {
+        "page_title": page.title(),
+        "processed_orders": int(
+            summary.locator("[data-testid='processed-orders']").inner_text()
+        ),
+        "ready_orders": int(summary.locator("[data-testid='ready-orders']").inner_text()),
+        "total_value": summary.locator("[data-testid='total-value']").inner_text(),
     }
-    for field, key in field_data_map.items():
-        page.fill(f"//input[@ng-reflect-name='{field}']", str(row[key]))
-    page.click("input:text('Submit')")
+
+    if result != EXPECTED_SUMMARY:
+        raise AssertionError(f"Unexpected browser summary: {result!r}")
+
+    summary.screenshot(path=str(screenshot_path))
+    data_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+
+    print(f"Browser engine: {config['browser_engine']}")
+    print(f"Processed orders: {result['processed_orders']}")
+    print(f"Ready orders: {result['ready_orders']}")
+    print(f"Total value: {result['total_value']}")
+    print(f"Wrote {data_path}")
+    print(f"Wrote {screenshot_path}")
+
+
+def write_fixture(path: Path) -> Path:
+    rows = "\n".join(
+        f"""
+        <tr data-status="{escape(order['status'])}" data-total="{order['total']:.2f}">
+          <td>{escape(order['customer'])}</td>
+          <td>{escape(order['status'])}</td>
+          <td>${order['total']:.2f}</td>
+        </tr>
+        """.strip()
+        for order in ORDERS
+    )
+
+    path.write_text(
+        f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Browser Automation Smoke</title>
+  <style>
+    body {{
+      color: #1f2937;
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      max-width: 720px;
+    }}
+    table {{
+      border-collapse: collapse;
+      margin: 1rem 0;
+      width: 100%;
+    }}
+    th,
+    td {{
+      border: 1px solid #d1d5db;
+      padding: 0.5rem;
+      text-align: left;
+    }}
+    button {{
+      font-size: 1rem;
+      padding: 0.5rem 0.75rem;
+    }}
+    [data-testid="summary"] {{
+      border: 1px solid #2563eb;
+      margin-top: 1rem;
+      padding: 1rem;
+    }}
+  </style>
+</head>
+<body>
+  <h1>Browser Automation Smoke</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Customer</th>
+        <th>Status</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {rows}
+    </tbody>
+  </table>
+
+  <button type="button" id="build-summary">Build summary</button>
+
+  <section data-testid="summary" hidden>
+    <h2>Order summary</h2>
+    <p>Processed orders: <strong data-testid="processed-orders"></strong></p>
+    <p>Ready orders: <strong data-testid="ready-orders"></strong></p>
+    <p>Total value: <strong data-testid="total-value"></strong></p>
+  </section>
+
+  <script>
+    document.querySelector("#build-summary").addEventListener("click", () => {{
+      const rows = Array.from(document.querySelectorAll("tbody tr"));
+      const ready = rows.filter((row) => row.dataset.status === "Ready").length;
+      const total = rows.reduce((sum, row) => sum + Number(row.dataset.total), 0);
+      const summary = document.querySelector('[data-testid="summary"]');
+
+      summary.querySelector('[data-testid="processed-orders"]').textContent = rows.length;
+      summary.querySelector('[data-testid="ready-orders"]').textContent = ready;
+      summary.querySelector('[data-testid="total-value"]').textContent = `$${{total.toFixed(2)}}`;
+      summary.hidden = false;
+    }});
+  </script>
+</body>
+</html>
+""",
+        encoding="utf-8",
+    )
+    return path

@@ -1,46 +1,93 @@
 # Python AI Chat Assistant
 
-A chat interface that allows you to communicate with OpenAI's GPT models using an RPA Assistant GUI.
+This template is for a local, human-operated assistant robot. It opens an
+RPA Assistant window, sends prompts to OpenAI only when the operator clicks
+`Send`, and keeps conversation state only for that local run.
 
-## Setup
+It does not publish, delete, update, or sync business records. It needs an
+OpenAI API key for the real assistant and credential check. The no-secret smoke
+task only verifies the RCC/Python task wiring and writes a local artifact.
 
-1. **Install RCC** (if not already installed):
-   - Download from [RCC releases](https://github.com/joshyorko/rcc/releases)
+## Local Secret Boundary
 
-2. **Configure your OpenAI API key:**
-   - Create a `.env` file in the project root
-   - Add your API key: `OPENAI_API_KEY=your-api-key-here`
-   - Follow the [OpenAI documentation](https://platform.openai.com/docs/quickstart/build-your-application) to generate an API key
+Use either a shell environment variable or a local `.env` file in this template
+root. The `.env` file is ignored by git.
 
-## Usage
-
-Run the chat application:
-```bash
-rcc run -t RunAssistant
+```zsh
+export OPENAI_API_KEY="your-api-key"
+export OPENAI_MODEL="gpt-4.1"
 ```
 
-Run the API key test:
-```bash
+or:
+
+```zsh
+printf 'OPENAI_API_KEY=your-api-key\nOPENAI_MODEL=gpt-4.1\n' > .env
+```
+
+Do not commit `.env`, API keys, task logs that reveal secrets, or generated
+outputs that contain sensitive prompts.
+
+## RCC Commands
+
+Run these from the `04-python-assistant-ai` directory.
+
+No-secret local smoke:
+
+```zsh
+rcc run -t SmokeLocal --dev
+```
+
+Expected result:
+
+- Does not call OpenAI.
+- Does not require `OPENAI_API_KEY`.
+- Writes `output/local-smoke.json`.
+- Reports whether a local key is present without printing the key.
+
+Credential check:
+
+```zsh
 rcc run -t TestKeys --dev
 ```
 
-To activate the environment for development:
-```bash
-rcc ht vars
-# or
-rcc holotree vars
+Expected result:
+
+- Requires `OPENAI_API_KEY` from the shell or local `.env`.
+- Makes one minimal OpenAI API request.
+- Writes `output/openai-credential-check.txt`.
+- Logs the model name and artifact path, but never prints the API key.
+
+Run the assistant:
+
+```zsh
+rcc run -t RunAssistant
 ```
 
-## Configuration
+Expected result:
 
-- The default model is `gpt-4.1` - modify in `tasks.py` if needed
-- Conversation history is maintained during the session
-- Dependencies are managed in `conda.yaml`
+- Requires `OPENAI_API_KEY`.
+- Opens the local assistant GUI.
+- Calls OpenAI only after the operator enters a prompt and clicks `Send`.
+- Keeps the conversation in memory for that run.
 
-## Documentation Resources
+Inspect the RCC environment without running a task:
 
-* [OpenAI API Documentation](https://platform.openai.com/docs)
-* [OpenAI Python Library](https://github.com/openai/openai-python)
-* [RCC Documentation](https://github.com/joshyorko/rcc/blob/master/docs/README.md)
-* [Robocorp Documentation](https://robocorp.com/docs) - RPA patterns and examples
-* [RPA Framework](https://rpaframework.org/) - automation library reference
+```zsh
+rcc ht vars -r robot.yaml
+```
+
+## First Files To Edit
+
+- `tasks.py`: assistant behavior, default model, prompt handling, UI copy.
+- `test-openai.py`: local smoke and credential-check tasks.
+- `robot.yaml`: RCC task names and task command wiring.
+- `conda.yaml`: Python and package pins when the template really needs a
+  dependency change.
+- `.env`: local-only secrets and model overrides. This file must stay untracked.
+
+## Current Defaults
+
+- Default model: `gpt-4.1`
+- Optional override: `OPENAI_MODEL`
+- Artifacts directory: `output`
+- Dependency management: `conda.yaml`

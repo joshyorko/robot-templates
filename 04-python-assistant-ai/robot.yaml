@@ -3,12 +3,15 @@
 
 tasks:
   RunAssistant:
-    shell: python -m robocorp.tasks run tasks.py
+    shell: python -m robocorp.tasks run tasks.py -t run_assistant
 
 
 devTasks:
+  SmokeLocal:
+    shell: python -m robocorp.tasks run test-openai.py -t smoke_local
+
   TestKeys:
-    shell: python -m robocorp.tasks run test-openai.py  -t test_keys
+    shell: python -m robocorp.tasks run test-openai.py -t check_openai_credentials
 
 environmentConfigs:
   - environment_windows_amd64_freeze.yaml

@@ -231,25 +231,26 @@ def assistant_org():
 
         producer_env = {
             "RC_WORKITEM_ADAPTER": "FileAdapter",
-            "RC_WORKITEM_INPUT_PATH": str(work_items_path),
-            "RC_WORKITEM_OUTPUT_PATH": "output/producer-to-consumer/work-items.json",
+            "RC_WORKITEM_INPUT_PATH": str(work_items_dir),
+            "RC_WORKITEM_OUTPUT_PATH": "output/file/producer-to-consumer",
         }
         consumer_env = {
             "RC_WORKITEM_ADAPTER": "FileAdapter",
-            "RC_WORKITEM_INPUT_PATH": "output/producer-to-consumer/work-items.json",
-            "RC_WORKITEM_OUTPUT_PATH": "output/consumer-to-reporter/work-items.json",
+            "RC_WORKITEM_INPUT_PATH": "output/file/producer-to-consumer",
+            "RC_WORKITEM_OUTPUT_PATH": "output/file/consumer-to-reporter",
         }
         reporter_env = {
             "RC_WORKITEM_ADAPTER": "FileAdapter",
-            "RC_WORKITEM_INPUT_PATH": "output/consumer-to-reporter/work-items.json",
-            "RC_WORKITEM_OUTPUT_PATH": "output/reporter-final/work-items.json",
+            "RC_WORKITEM_INPUT_PATH": "output/file/reporter-input",
+            "RC_WORKITEM_OUTPUT_PATH": "output/file/reporter-final",
         }
 
         stage_status: Dict[str, object] = {stage: None for stage in stage_order}
         stage_messages: Dict[str, str] = {}
 
-        Path("devdata").mkdir(exist_ok=True)
-        Path("output/reporter-final").mkdir(parents=True, exist_ok=True)
+        runtime_env_dir = Path("output/file/runtime-env")
+        runtime_env_dir.mkdir(parents=True, exist_ok=True)
+        Path("output/file/reporter-final").mkdir(parents=True, exist_ok=True)
 
         def write_env(path: Path, data: dict) -> None:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -289,7 +290,7 @@ def assistant_org():
             print(f"Running {stage} ({index + 1}/{len(stage_order)})…")
 
             if stage == "Producer":
-                env_path = Path("devdata/env-for-producer.json")
+                env_path = runtime_env_dir / "env-for-producer.json"
                 write_env(env_path, producer_env)
                 success, message = run_rcc_task(
                     ["rcc", "run", "-t", "Producer", "-e", str(env_path)]
@@ -339,18 +340,29 @@ def assistant_org():
                     all_outputs: List[str] = []
                     shard_success = True
                     for shard_idx, shard_file in enumerate(shard_files):
-                        shard_env = consumer_env.copy()
-                        shard_env["RC_WORKITEM_INPUT_PATH"] = str(shard_file)
-                        shard_env["RC_WORKITEM_OUTPUT_PATH"] = (
-                            f"output/consumer-to-reporter/work-items-shard-{shard_idx}.json"
+                        shard_input_dir = Path(f"output/file/shards/shard-{shard_idx}")
+                        shard_output_dir = Path(
+                            f"output/file/consumer-to-reporter/shard-{shard_idx}"
                         )
+                        shard_input_dir.mkdir(parents=True, exist_ok=True)
+                        shard_output_dir.mkdir(parents=True, exist_ok=True)
+                        with open(shard_file, "r") as source_handle:
+                            shard_data = json.load(source_handle)
+                        with open(
+                            shard_input_dir / "work-items.json", "w"
+                        ) as target_handle:
+                            json.dump(shard_data, target_handle, indent=2)
+
+                        shard_env = consumer_env.copy()
+                        shard_env["RC_WORKITEM_INPUT_PATH"] = str(shard_input_dir)
+                        shard_env["RC_WORKITEM_OUTPUT_PATH"] = str(shard_output_dir)
                         os.environ["SHARD_ID"] = str(shard_idx)
                         env_path = Path(
-                            f"devdata/env-for-consumer-shard-{shard_idx}.json"
+                            f"output/file/runtime-env/env-for-consumer-shard-{shard_idx}.json"
                         )
                         write_env(env_path, shard_env)
                         print(
-                            f"[assistant] Running Consumer shard {shard_idx} with {shard_file.name}"
+                            f"[assistant] Running Consumer shard {shard_idx} with {shard_input_dir}"
                         )
                         shard_ok, shard_msg = run_rcc_task(
                             ["rcc", "run", "-t", "Consumer", "-e", str(env_path)]
@@ -360,15 +372,17 @@ def assistant_org():
                         )
                         shard_success = shard_success and shard_ok
                         all_outputs.append(
-                            f"output/consumer-to-reporter/work-items-shard-{shard_idx}.json"
+                            "output/file/consumer-to-reporter/"
+                            f"shard-{shard_idx}/work-items.json"
                         )
                         # Early abort if one shard fails? Keep going to gather more results.
 
                     # 3. Merge shard outputs into consolidated file for Reporter stage
                     consolidated_path = Path(
-                        "output/consumer-to-reporter/work-items.json"
+                        "output/file/reporter-input/work-items.json"
                     )
-                    merged_items: List[dict] = []
+                    merged_work_items: List[dict] = []
+                    merged_payloads: List[dict] = []
                     for output_fp in all_outputs:
                         p = Path(output_fp)
                         if p.exists():
@@ -379,9 +393,14 @@ def assistant_org():
                                         # Items could be list of objects with 'payload' or raw dicts
                                         for entry in data:
                                             if isinstance(entry, dict):
-                                                payload = entry.get("payload") if "payload" in entry else entry
+                                                merged_work_items.append(entry)
+                                                payload = (
+                                                    entry.get("payload")
+                                                    if "payload" in entry
+                                                    else entry
+                                                )
                                                 if isinstance(payload, dict):
-                                                    merged_items.append(payload)
+                                                    merged_payloads.append(payload)
                                     else:
                                         print(
                                             f"[assistant] Skipping non-list output file {p}"
@@ -397,11 +416,11 @@ def assistant_org():
                     try:
                         consolidated_path.parent.mkdir(parents=True, exist_ok=True)
                         with open(consolidated_path, "w") as f:
-                            json.dump(merged_items, f, indent=2)
+                            json.dump(merged_work_items, f, indent=2)
                         print(
-                            f"[assistant] Merged {len(merged_items)} items into {consolidated_path}"
+                            f"[assistant] Merged {len(merged_work_items)} items into {consolidated_path}"
                         )
-                        consumer_merged_payloads = merged_items[:]  # copy for later summary
+                        consumer_merged_payloads = merged_payloads[:]  # copy for later summary
                     except Exception as write_exc:
                         shard_success = False
                         print(
@@ -410,10 +429,10 @@ def assistant_org():
 
                     success = shard_success
                     message = (
-                        f"Shards: {len(shard_files)} merged items: {len(merged_items)}"
+                        f"Shards: {len(shard_files)} merged items: {len(merged_work_items)}"
                     )
             elif stage == "Reporter":
-                env_path = Path("devdata/env-for-reporter.json")
+                env_path = runtime_env_dir / "env-for-reporter.json"
                 write_env(env_path, reporter_env)
                 success, message = run_rcc_task(
                     ["rcc", "run", "-t", "Reporter", "-e", str(env_path)]
@@ -464,9 +483,7 @@ def assistant_org():
                         )
                 # If still empty, read consolidated consumer output raw
                 if not repos_payloads:
-                    cons_file = Path(
-                        "output/consumer-to-reporter/work-items.json"
-                    )
+                    cons_file = Path("output/file/reporter-input/work-items.json")
                     if cons_file.exists():
                         try:
                             with open(cons_file, "r") as f:

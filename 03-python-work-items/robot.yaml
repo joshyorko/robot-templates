@@ -3,11 +3,11 @@
 
 tasks:
   Producer:
-    shell: python -m robocorp.tasks run tasks.py -t producer 
+    shell: python -m robocorp.tasks run tasks.py -t producer
   Consumer:
     shell: python -m robocorp.tasks run tasks.py -t consumer
   Reporter:
-    shell: python -m robocorp.tasks run tasks.py -t reporter 
+    shell: python -m robocorp.tasks run tasks.py -t reporter
   GenerateConsolidatedDashboard:
     shell: python -m robocorp.tasks run generate_consolidated_dashboard.py -t generate_consolidated_dashboard
   AssistantOrg:
@@ -29,6 +29,8 @@ devTasks:
     shell: python scripts/recover_orphaned_items.py
   DiagnoseReporterIssue:
     shell: python scripts/diagnose_reporter_issue.py
+  CombineFileWorkItems:
+    shell: python scripts/combine_workitems.py
 
   ListWorkItems:
     shell: python -m robocorp.tasks run scripts/listworkitems.py -t list_work_items

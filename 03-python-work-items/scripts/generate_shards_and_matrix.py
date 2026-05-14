@@ -3,15 +3,24 @@ import math
 from pathlib import Path
 import sys
 
+
+def load_work_items(path):
+    data = json.loads(path.read_text())
+    if isinstance(data, dict):
+        return data.get("workItems", data.get("items", []))
+    if isinstance(data, list):
+        return data
+    raise ValueError(f"{path} must contain a work item list or workItems object")
+
+
 def main(max_workers):
     # Read work items from producer output
-    work_items_path = Path('output/producer-to-consumer/work-items.json')
+    work_items_path = Path('output/file/producer-to-consumer/work-items.json')
     if not work_items_path.exists():
         print(f"Warning: {work_items_path} not found, treating as empty work items.")
         work_items = []
     else:
-        with open(work_items_path, 'r') as f:
-            work_items = json.load(f)
+        work_items = load_work_items(work_items_path)
     max_workers = int(max_workers)
     total = len(work_items)
 

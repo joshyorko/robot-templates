@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # Number of parallel workers (shards) can be supplied as the first argument.
@@ -67,17 +67,24 @@ consumer_logs_captured=false
 for SHARD_PATH in output/shards/work-items-shard-*.json; do
   [ -e "$SHARD_PATH" ] || continue
   SHARD_ID="$(basename "$SHARD_PATH" | grep -oE '[0-9]+')"
+  SHARD_INPUT_DIR="output/file/shards/shard-${SHARD_ID}"
+  CONSUMER_OUTPUT_DIR="output/file/consumer-to-reporter/shard-${SHARD_ID}"
+  CONSUMER_ENV="output/file/runtime-env/env-for-consumer-${SHARD_ID}.json"
 
-  cat > devdata/env-for-consumer.json <<EOF
+  rm -rf "$SHARD_INPUT_DIR" "$CONSUMER_OUTPUT_DIR"
+  mkdir -p "$SHARD_INPUT_DIR" "$CONSUMER_OUTPUT_DIR" "$(dirname "$CONSUMER_ENV")"
+  cp "$SHARD_PATH" "${SHARD_INPUT_DIR}/work-items.json"
+
+  cat > "$CONSUMER_ENV" <<EOF
 {
   "RC_WORKITEM_ADAPTER": "FileAdapter",
-  "RC_WORKITEM_INPUT_PATH": "$SHARD_PATH",
-  "RC_WORKITEM_OUTPUT_PATH": "output/consumer-to-reporter/work-items-${SHARD_ID}.json"
+  "RC_WORKITEM_INPUT_PATH": "$SHARD_INPUT_DIR",
+  "RC_WORKITEM_OUTPUT_PATH": "$CONSUMER_OUTPUT_DIR"
 }
 EOF
 
-  echo "Running consumer for shard ${SHARD_ID} using ${SHARD_PATH}"
-  SHARD_ID="$SHARD_ID" rcc run -t "Consumer" -e devdata/env-for-consumer.json
+  echo "Running consumer for shard ${SHARD_ID} using ${SHARD_INPUT_DIR}"
+  SHARD_ID="$SHARD_ID" rcc run -t "Consumer" -e "$CONSUMER_ENV"
   preserve_logs "consumer-to-reporter/consumer-shard-${SHARD_ID}-logs.html"
   consumer_logs_captured=true
 done
@@ -86,36 +93,20 @@ if [ "$consumer_logs_captured" = true ]; then
   preserve_logs "consumer-to-reporter/consumer-logs.html"
 fi
 
-# Combine all consumer outputs into a single file for the reporter
-mkdir -p output/reporter-input
-COMBINED_FILE="output/reporter-input/work-items.json"
-echo "[" > "$COMBINED_FILE"
-
-# Combine all consumer output files
-FIRST_FILE=true
-for CONSUMER_FILE in output/consumer-to-reporter/work-items-*.json; do
-  [ -e "$CONSUMER_FILE" ] || continue
-  if [ "$FIRST_FILE" = true ]; then
-    FIRST_FILE=false
-  else
-    echo "," >> "$COMBINED_FILE"
-  fi
-  # Extract the payload from each consumer file and add it to the combined file
-  cat "$CONSUMER_FILE" | jq -r '.[]' >> "$COMBINED_FILE"
-done
-
-echo "]" >> "$COMBINED_FILE"
+mkdir -p output/file/reporter-input output/file/runtime-env
+python3 scripts/combine_workitems.py
 
 # Create environment configuration for reporter
-cat > devdata/env-for-reporter.json <<EOF
+REPORTER_ENV="output/file/runtime-env/env-for-reporter.json"
+cat > "$REPORTER_ENV" <<EOF
 {
   "RC_WORKITEM_ADAPTER": "FileAdapter",
-  "RC_WORKITEM_INPUT_PATH": "$COMBINED_FILE",
-  "RC_WORKITEM_OUTPUT_PATH": "output/reporter-final/work-items.json"
+  "RC_WORKITEM_INPUT_PATH": "output/file/reporter-input",
+  "RC_WORKITEM_OUTPUT_PATH": "output/file/reporter-final"
 }
 EOF
 
 # Run reporter step to process all consumer outputs
 echo "Running reporter step"
-rcc run -t "Reporter" -e devdata/env-for-reporter.json
+rcc run -t "Reporter" -e "$REPORTER_ENV"
 preserve_logs "reporter-logs.html"

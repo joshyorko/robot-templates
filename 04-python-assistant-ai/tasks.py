@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+
 from robocorp.tasks import task
 
 from RPA.Assistant.types import WindowLocation, Size
@@ -8,20 +10,20 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 
-# Load environment variables from .env file in the same directory as this script
-env_path = os.path.join(os.path.dirname(__file__), '.env')
-load_dotenv(env_path)
+ROOT = Path(__file__).resolve().parent
+ENV_PATH = ROOT / ".env"
+DEFAULT_MODEL = "gpt-4.1"
 
 
 assistant = RPA.Assistant.Assistant()
 gpt_conversation_display = []
 gpt_conversation_internal = []
-gpt_model = "gpt-4.1"
+gpt_model = DEFAULT_MODEL
 openai_client = None
 
 
 @task
-def display_window():
+def run_assistant():
     authorize_openai()
 
     display_conversation()
@@ -35,20 +37,18 @@ def display_window():
 
 
 def authorize_openai():
-    # Make sure to set the OPENAI_API_KEY environment variable before running this script.
-    # For zsh, use:
-    #   export OPENAI_API_KEY=your-openai-api-key
-    global openai_client
+    global gpt_model, openai_client
+    load_dotenv(ENV_PATH)
+
     openai_key = os.environ.get("OPENAI_API_KEY")
     if not openai_key:
-        # Debug information
-        env_path = os.path.join(os.path.dirname(__file__), '.env')
-        print(f"Looking for .env file at: {env_path}")
-        print(f"File exists: {os.path.exists(env_path)}")
-        print(f"All environment variables containing 'OPENAI': {[k for k in os.environ.keys() if 'OPENAI' in k]}")
-        raise RuntimeError("OPENAI_API_KEY environment variable not set.")
-    
-    print(f"OpenAI API key loaded successfully (length: {len(openai_key)})")
+        raise RuntimeError(
+            "OPENAI_API_KEY is not set. Export it locally or create "
+            "04-python-assistant-ai/.env; do not commit secrets."
+        )
+
+    gpt_model = os.environ.get("OPENAI_MODEL", DEFAULT_MODEL)
+    print(f"OpenAI credentials found; starting local assistant with {gpt_model}.")
     openai_client = OpenAI(api_key=openai_key)
 
 

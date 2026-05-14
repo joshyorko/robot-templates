@@ -3,7 +3,7 @@
 import os, sys, json, base64, argparse
 from pathlib import Path
 
-# Add project root to path so "custom_adapters" can be imported
+# Add project root to path so local project helpers can be imported.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 def load_env(env_json: Path):

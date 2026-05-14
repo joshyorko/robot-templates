@@ -442,12 +442,18 @@ class LogConsolidator:
         # For Producer and Reporter tasks, use standard paths
         if task_name == "Producer":
             work_items_paths = [
-                self.output_dir / "producer-to-consumer" / "work-items.json"
+                self.output_dir / "file" / "producer-to-consumer" / "work-items.json"
             ]
         elif task_name == "Reporter":
             # For Reporter task, don't process individual work items since they're already processed by consumer shards
             # Just create a summary task execution entry
-            consolidated_path = self.output_dir / "consumer-to-reporter" / "work-items.json"
+            reporter_inputs = [
+                self.output_dir / "file" / "reporter-input" / "work-items.json",
+                self.output_dir / "file" / "consumer-to-reporter" / "work-items.json",
+            ]
+            consolidated_path = next(
+                (path for path in reporter_inputs if path.exists()), reporter_inputs[0]
+            )
             if consolidated_path.exists():
                 try:
                     with open(consolidated_path, 'r') as f:
@@ -502,15 +508,17 @@ class LogConsolidator:
         elif task_name.startswith("Consumer-Shard-"):
             # For specific consumer shard, look for its specific work items file
             shard_id = task_name.replace("Consumer-Shard-", "")
-            consumer_dir = self.output_dir / "consumer-to-reporter"
-            shard_file = consumer_dir / f"work-items-{shard_id}.json"
+            consumer_dir = self.output_dir / "file" / "consumer-to-reporter"
+            shard_file = consumer_dir / f"shard-{shard_id}" / "work-items.json"
             
             if shard_file.exists():
                 work_items_paths = [shard_file]
                 log.info(f"Processing individual shard file for {task_name}: {shard_file}")
             else:
                 # Fall back to processing from consolidated file, but distribute items across shards
-                consolidated_file = consumer_dir / "work-items.json"
+                consolidated_file = (
+                    self.output_dir / "file" / "reporter-input" / "work-items.json"
+                )
                 if consolidated_file.exists():
                     work_items_paths = [consolidated_file]
                     log.info(f"Processing consolidated file for {task_name}: {consolidated_file}")
@@ -520,7 +528,7 @@ class LogConsolidator:
         elif task_name == "Consumer":
             # For generic consumer (fallback), use consolidated work items
             work_items_paths = [
-                self.output_dir / "consumer-to-reporter" / "work-items.json"
+                self.output_dir / "file" / "consumer-to-reporter" / "work-items.json"
             ]
         
         for path in work_items_paths:

@@ -60,13 +60,13 @@ jobs:
 
       - name: Warm Holotree
         run: |
-          rcc holotree variables -r robot.yaml -s producer || true
-          rcc holotree variables -r robot.yaml -s consumer || true
-          rcc holotree variables -r robot.yaml -s reporter || true
+          rcc holotree variables -r robot.yaml -s Producer || true
+          rcc holotree variables -r robot.yaml -s Consumer || true
+          rcc holotree variables -r robot.yaml -s Reporter || true
           rcc holotree list || true
 
       - name: Run RCC Producer
-        run: rcc run -t producer -e devdata/env-for-producer.json
+        run: rcc run -t Producer -e devdata/env-for-producer.json
         env:
           ORG_NAME: ${{ inputs.org_name }}
 
@@ -153,17 +153,20 @@ jobs:
 
       - name: Update consumer env file for shard
         run: |
-          SHARD_PATH="output/shards/work-items-shard-${{ matrix.shard_id }}.json"
-          cat > devdata/env-for-consumer.json <<EOF
+          SHARD_PATH="output/file/shards/shard-${{ matrix.shard_id }}"
+          CONSUMER_OUTPUT_PATH="output/file/consumer-to-reporter/shard-${{ matrix.shard_id }}"
+          CONSUMER_ENV_PATH="output/file/runtime-env/env-for-consumer-${{ matrix.shard_id }}.json"
+          mkdir -p "$SHARD_PATH" "$CONSUMER_OUTPUT_PATH" "$(dirname "$CONSUMER_ENV_PATH")"
+          cat > "$CONSUMER_ENV_PATH" <<EOF
           {
             "RC_WORKITEM_ADAPTER": "FileAdapter",
             "RC_WORKITEM_INPUT_PATH": "${SHARD_PATH}",
-            "RC_WORKITEM_OUTPUT_PATH": "output/consumer-to-reporter/work-items-${{ matrix.shard_id }}.json"
+            "RC_WORKITEM_OUTPUT_PATH": "${CONSUMER_OUTPUT_PATH}"
           }
           EOF
 
       - name: Run RCC Consumer
-        run: rcc run -t consumer -e devdata/env-for-consumer.json
+        run: rcc run -t Consumer -e output/file/runtime-env/env-for-consumer-${{ matrix.shard_id }}.json
         env:
           SHARD_ID: ${{ matrix.shard_id }}
           ORG_NAME: ${{ inputs.org_name }}
@@ -231,26 +234,28 @@ jobs:
 
       - name: Combine consumer outputs for reporter
         run: |
-          mkdir -p output/reporter-input
-          if ls shard-outputs/consumer-to-reporter/work-items-*.json >/dev/null 2>&1; then
-            jq -s 'add' shard-outputs/consumer-to-reporter/work-items-*.json > output/reporter-input/work-items.json
+          mkdir -p output/file/reporter-input
+          if find shard-outputs -type f -path "*/file/consumer-to-reporter/shard-*/work-items.json" | grep -q .; then
+            find shard-outputs -type f -path "*/file/consumer-to-reporter/shard-*/work-items.json" -print0 \
+              | xargs -0 jq -s 'map(if type=="object" then (.workItems // .items // []) else . end) | add' \
+              > output/file/reporter-input/work-items.json
           else
-            echo '[]' > output/reporter-input/work-items.json
+            echo '[]' > output/file/reporter-input/work-items.json
           fi
 
       - name: Create reporter environment config
         run: |
-          mkdir -p output/reporter-final
-          cat > devdata/env-for-reporter.json <<EOF
+          mkdir -p output/file/reporter-final output/file/runtime-env
+          cat > output/file/runtime-env/env-for-reporter.json <<EOF
           {
             "RC_WORKITEM_ADAPTER": "FileAdapter",
-            "RC_WORKITEM_INPUT_PATH": "output/reporter-input/work-items.json",
-            "RC_WORKITEM_OUTPUT_PATH": "output/reporter-final/work-items.json"
+            "RC_WORKITEM_INPUT_PATH": "output/file/reporter-input",
+            "RC_WORKITEM_OUTPUT_PATH": "output/file/reporter-final"
           }
           EOF
 
       - name: Run RCC Reporter
-        run: rcc run -t reporter -e devdata/env-for-reporter.json
+        run: rcc run -t Reporter -e output/file/runtime-env/env-for-reporter.json
 
       - name: Capture Reporter Logs
         run: |
@@ -265,8 +270,8 @@ jobs:
           path: |
             output/final_report_*.json
             output/reporter-logs.html
-            output/consumer-to-reporter/
-            output/reporter-final/
+            output/file/reporter-input/
+            output/file/reporter-final/
           retention-days: 7
 
       - name: Workflow Summary
@@ -334,6 +339,7 @@ jobs:
           echo "Organizing output directory for dashboard..."
           mkdir -p output/producer-to-consumer
           mkdir -p output/consumer-to-reporter
+          mkdir -p output/file/reporter-input
           mkdir -p output/screenshots
 
           # Producer logs
@@ -350,12 +356,13 @@ jobs:
           fi
 
           # Combine consumer shard outputs into a single work-items.json if available
-          files_to_merge=$(find all-artifacts -type f -path "*/shard-output-*/consumer-to-reporter/work-items-*.json" | wc -l)
+          files_to_merge=$(find all-artifacts -type f -path "*/shard-output-*/file/consumer-to-reporter/shard-*/work-items.json" | wc -l)
           if [ "$files_to_merge" -gt 0 ]; then
-            find all-artifacts -type f -path "*/shard-output-*/consumer-to-reporter/work-items-*.json" -print0 | xargs -0 jq -s 'add' > output/consumer-to-reporter/work-items.json
-            # Zip all work-items-*.json files from all shards into a single archive
-            echo "Zipping all consumer-to-reporter work-items-*.json files into output/all-repos.zip..."
-            find all-artifacts -type f -path "*/shard-output-*/consumer-to-reporter/work-items-*.json" -print0 | xargs -0 zip -j output/all-repos.zip
+            find all-artifacts -type f -path "*/shard-output-*/file/consumer-to-reporter/shard-*/work-items.json" -print0 \
+              | xargs -0 jq -s 'map(if type=="object" then (.workItems // .items // []) else . end) | add' \
+              > output/file/reporter-input/work-items.json
+            echo "Zipping all consumer-to-reporter work-items.json files into output/all-repos.zip..."
+            find all-artifacts -type f -path "*/shard-output-*/file/consumer-to-reporter/shard-*/work-items.json" -print0 | xargs -0 zip -j output/all-repos.zip
             # Also include any repos shard zip files produced by consumers (repos-shard-*.zip)
             repo_zip_count=$(find all-artifacts -type f -name "repos-shard-*.zip" | wc -l)
             if [ "$repo_zip_count" -gt 0 ]; then
@@ -367,11 +374,11 @@ jobs:
             fi
           else
             # Fallback: reporter-final/work-items.json
-            if [ -f "all-artifacts/reporter-output/reporter-final/work-items.json" ]; then
-              cp all-artifacts/reporter-output/reporter-final/work-items.json output/consumer-to-reporter/work-items.json
+            if [ -f "all-artifacts/reporter-output/file/reporter-final/work-items.json" ]; then
+              cp all-artifacts/reporter-output/file/reporter-final/work-items.json output/file/reporter-input/work-items.json
               # Zip the fallback file as well
-              echo "Zipping fallback reporter-final/work-items.json into output/all-repos.zip..."
-              zip -j output/all-repos.zip all-artifacts/reporter-output/reporter-final/work-items.json
+              echo "Zipping fallback file/reporter-final/work-items.json into output/all-repos.zip..."
+              zip -j output/all-repos.zip all-artifacts/reporter-output/file/reporter-final/work-items.json
               # Also include repo shard zips if they exist (from reporter or other artifacts)
               if ls all-artifacts/**/repos-shard-*.zip >/dev/null 2>&1; then
                 echo "Copying any repos-shard-*.zip to output and adding to all-repos.zip"
@@ -379,9 +386,9 @@ jobs:
                 find all-artifacts -type f -name "repos-shard-*.zip" -print0 | xargs -0 zip -u -j output/all-repos.zip || true
               fi
             else
-              echo "[]" > output/consumer-to-reporter/work-items.json
+              echo "[]" > output/file/reporter-input/work-items.json
               # Still create an empty zip if no files found
-              echo "No work-items-*.json files found, creating empty output/all-repos.zip"
+              echo "No shard work-items.json files found, creating empty output/all-repos.zip"
               zip -j output/all-repos.zip /dev/null || true
             fi
           fi
@@ -434,6 +441,7 @@ jobs:
             output/consolidated_data.json
             output/csv_exports/
             output/consumer-to-reporter/
+            output/file/reporter-input/
             output/reporter-logs.html
             output/repos-shard-*.zip
             output/all-repos.zip
@@ -453,6 +461,7 @@ jobs:
             echo "- output/consolidated_data.json" >> $GITHUB_STEP_SUMMARY
             echo "- output/csv_exports/" >> $GITHUB_STEP_SUMMARY
             echo "- output/consumer-to-reporter/" >> $GITHUB_STEP_SUMMARY
+            echo "- output/file/reporter-input/" >> $GITHUB_STEP_SUMMARY
             echo "- output/reporter-logs.html" >> $GITHUB_STEP_SUMMARY
             echo "- Artifact: consolidated-dashboard-output" >> $GITHUB_STEP_SUMMARY
           else

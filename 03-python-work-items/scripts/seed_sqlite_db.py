@@ -1,64 +1,92 @@
 #!/usr/bin/env python3
-"""Seed SQLite database with initial work items for testing.
+"""Seed SQLite with initial work items for local producer runs."""
 
-This script creates initial work items in the SQLite database for the producer task to process.
-"""
-
+import argparse
 import json
 import os
 import sys
 from pathlib import Path
 
-# Add project root to path
+# Add project root to path.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from robocorp_adapters_custom._sqlite import SQLiteAdapter
 
 
-def seed_producer_workitem():
-    """Create initial S3 trigger work item for producer."""
+DEFAULT_INPUT = "devdata/work-items-in/input-for-producer/work-items.json"
 
-    # Set environment for SQLite adapter
-    os.environ["RC_WORKITEM_DB_PATH"] = "devdata/work_items.db"
-    os.environ["RC_WORKITEM_QUEUE_NAME"] = "fetch_repos"
 
-    # Initialize adapter
-    adapter = SQLiteAdapter()
+def load_env(env_json: Path) -> None:
+    if env_json.exists():
+        data = json.loads(env_json.read_text())
+        for key, value in data.items():
+            if key.startswith("_"):
+                continue
+            os.environ[key] = os.path.expandvars(str(value))
 
-    # Load test input payload
-    test_input_path = Path("devdata/work-items-in/input-for-producer/work-items.json")
 
-    if not test_input_path.exists():
-        print(f"Error: Test input file not found: {test_input_path}")
+def load_items(path: Path) -> list[dict]:
+    if not path.exists():
+        print(f"Error: Test input file not found: {path}")
         sys.exit(1)
 
-    with open(test_input_path) as f:
-        work_items = json.load(f)
+    raw = json.loads(path.read_text())
+    if isinstance(raw, dict):
+        return [raw]
+    if not isinstance(raw, list):
+        raise ValueError(f"{path} must contain one work item object or a list")
+    return raw
 
+
+def load_files(item: dict) -> list[tuple[str, bytes]] | None:
+    files = []
+    for name, source in (item.get("files") or {}).items():
+        source_path = Path(str(source))
+        if source_path.exists():
+            files.append((name, source_path.read_bytes()))
+    return files or None
+
+
+def seed_producer_workitems(input_path: Path) -> int:
+    os.environ.setdefault("RC_WORKITEM_DB_PATH", "devdata/work_items.db")
+    os.environ.setdefault("RC_WORKITEM_FILES_DIR", "devdata/work_item_files")
+    os.environ.setdefault("RC_WORKITEM_QUEUE_NAME", "fetch_repos")
+    os.environ.setdefault("RC_WORKITEM_OUTPUT_QUEUE_NAME", "fetch_repos_output")
+
+    adapter = SQLiteAdapter()
+    work_items = load_items(input_path)
     if not work_items:
         print("Error: No work items found in test input")
         sys.exit(1)
 
-    # Create initial work item for producer directly in the INPUT queue
-    # Note: create_output() creates items in {queue}_output queue, but Producer needs input queue
-    payload = work_items[0]["payload"]
-    import uuid as uuid_module
-    item_id = str(uuid_module.uuid4())
+    created = 0
+    for item in work_items:
+        payload = item.get("payload", item)
+        item_id = adapter.seed_input(payload=payload, files=load_files(item))
+        created += 1
+        print(f"Created producer work item: {item_id}")
+        print(f"  Payload: {json.dumps(payload, indent=2)}")
 
-    # Insert directly into input queue (not output queue)
-    with adapter._pool.acquire() as conn:
-        conn.execute("""
-            INSERT INTO work_items (id, queue_name, parent_id, payload, state, created_at)
-            VALUES (?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP)
-        """, (item_id, adapter.queue_name, None, json.dumps(payload)))
-        conn.commit()
-
-    print(f"✓ Created producer work item: {item_id}")
-    print(f"  Payload: {json.dumps(payload, indent=2)}")
     print(f"\nDatabase: {os.environ['RC_WORKITEM_DB_PATH']}")
-    print(f"Queue: {os.environ['RC_WORKITEM_QUEUE_NAME']}")
-    print(f"\nNow run: rcc run -t Producer -e devdata/env-sqlite-producer.json")
+    print(f"Input queue: {os.environ['RC_WORKITEM_QUEUE_NAME']}")
+    print(f"Output queue: {os.environ.get('RC_WORKITEM_OUTPUT_QUEUE_NAME', '')}")
+    print("\nNext:")
+    print("  rcc run -t Producer -e devdata/env-sqlite-producer.json")
+    return created
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--env", default="", help="Optional adapter env JSON")
+    parser.add_argument("--json", default=DEFAULT_INPUT, help="Input work-items JSON")
+    args = parser.parse_args()
+
+    if args.env:
+        load_env(Path(args.env))
+
+    count = seed_producer_workitems(Path(args.json))
+    print(f"Done. Seeded {count} item(s).")
 
 
 if __name__ == "__main__":
-    seed_producer_workitem()
+    main()

@@ -27,6 +27,7 @@ def get_adapter_config() -> Dict[str, object]:
 
         # Common configuration
         "queue_name": os.getenv("RC_WORKITEM_QUEUE_NAME", "default"),
+        "output_queue_name": os.getenv("RC_WORKITEM_OUTPUT_QUEUE_NAME", ""),
         "files_dir": os.getenv("RC_WORKITEM_FILES_DIR", "devdata/work_item_files"),
         "orphan_timeout_minutes": int(os.getenv("RC_WORKITEM_ORPHAN_TIMEOUT_MINUTES", "30")),
 
@@ -50,7 +51,7 @@ def get_adapter_config() -> Dict[str, object]:
     if not config["adapter_class"]:
         raise ValueError(
             "RC_WORKITEM_ADAPTER environment variable is required. "
-            "Example: custom_adapters.sqlite_adapter.SQLiteAdapter"
+            "Example: robocorp_adapters_custom._sqlite.SQLiteAdapter"
         )
 
     return config
