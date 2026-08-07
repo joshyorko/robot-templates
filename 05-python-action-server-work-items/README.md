@@ -37,9 +37,9 @@ Once you are inside that directory, env files are referenced as
 `devdata/<file>.json`. Do not prefix them with `test-actions/`.
 
 The `-e` flag is required for every workflow task here. It loads the adapter
-env JSON for that exact stage. For the file adapter, env paths are directories
-that contain `work-items.json`; never point `RC_WORKITEM_INPUT_PATH` or
-`RC_WORKITEM_OUTPUT_PATH` at the JSON file itself.
+env JSON for that exact stage. File adapter env paths point directly at JSON
+files. Existing files and paths ending in `.json` use a top-level list; do not
+seed, wrap, or translate the committed input fixture.
 
 ## Quick Smoke
 
@@ -67,8 +67,9 @@ Useful local UIs:
 
 ## Run the Workflow
 
-Seed one input item, then run producer, consumer, and reporter. Every command
-uses the env file for the stage it is running.
+Run producer, consumer, and reporter with the env file for each stage. Database
+backends require an initial seed; the committed FileAdapter fixture is already
+the input queue and must remain a top-level list.
 
 SQLite is the lowest-friction local database path:
 
@@ -82,7 +83,6 @@ rcc run -t Reporter -e devdata/env-sqlite-for-reporter.json
 File adapter:
 
 ```bash
-rcc run --dev -t SeedFile -e devdata/env-for-producer.json
 rcc run -t Producer -e devdata/env-for-producer.json
 rcc run -t Consumer -e devdata/env-for-consumer.json
 rcc run -t Reporter -e devdata/env-for-reporter.json
@@ -126,8 +126,8 @@ fetch_repos -> fetch_repos_output -> fetch_repos_report -> fetch_repos_done
 ```
 
 Producers and consumers create outputs only while processing a reserved input
-item. Use `scripts/seed_workitems.py` or the `Seed*` dev tasks to create the
-initial input item.
+item. Use `scripts/seed_workitems.py` or the `Seed*` dev tasks for database
+backends. Never seed the direct FileAdapter fixture.
 
 ## Files
 

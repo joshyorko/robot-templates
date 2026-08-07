@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -44,11 +46,37 @@ def run_flow(adapter, input_queue: str, output_queue: str, label: str) -> None:
 
 
 def smoke_file(root: Path) -> None:
-    adapter = workitems.FileAdapter(
-        input_path=str(root / "file-in"),
-        output_path=str(root / "file-out"),
+    fixture = (
+        Path(__file__).resolve().parents[1]
+        / "devdata"
+        / "work-items-in"
+        / "input-for-producer"
+        / "work-items.json"
     )
-    run_flow(adapter, "file", "file_output", "file")
+    input_path = root / "file-in.json"
+    output_path = root / "file-out" / "work-items.json"
+    shutil.copyfile(fixture, input_path)
+    adapter = workitems.FileAdapter(
+        input_path=str(input_path),
+        output_path=str(output_path),
+    )
+    workitems.init(adapter)
+
+    seen = []
+    for item in workitems.inputs:
+        with item:
+            seen.append(item.payload)
+            workitems.outputs.create({"processed": True, "source": item.payload})
+
+    if len(seen) != 2:
+        raise AssertionError(f"file: expected 2 fixture items, saw {len(seen)}")
+    if json.loads(input_path.read_text()) != json.loads(fixture.read_text()):
+        raise AssertionError("file: direct input fixture representation changed")
+    outputs = json.loads(output_path.read_text())
+    if not isinstance(outputs, list) or len(outputs) != 2:
+        raise AssertionError(f"file: expected 2 direct outputs, saw {outputs!r}")
+
+    print("PASS file: unchanged top-level-list fixture produced 2 outputs without seeding")
 
 
 def smoke_sqlite(root: Path) -> None:
