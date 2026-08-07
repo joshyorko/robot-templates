@@ -11,8 +11,6 @@ tasks:
 
 
 devTasks:
-  SeedFile:
-    shell: python scripts/seed_workitems.py --env devdata/env-for-producer.json
   SeedSQLiteDB:
     shell: python scripts/seed_workitems.py --env devdata/env-sqlite-producer.json
   SeedRedisDB:

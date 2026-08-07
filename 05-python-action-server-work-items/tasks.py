@@ -18,8 +18,10 @@ TimeoutException = Exception  # type: ignore
 @task
 def producer():
     """Fetches repositories from GitHub org and creates work items."""
+    input_count = 0
     # Process input work items to get organization name
     for item in workitems.inputs:
+        input_count += 1
         try:
             payload = item.payload
             if not isinstance(payload, dict):
@@ -108,6 +110,11 @@ def producer():
             error_msg = f"Unexpected error in producer task: {str(e)}"
             log.exception(error_msg)
             item.fail("APPLICATION", code="UNEXPECTED_ERROR", message=error_msg)
+
+    if input_count == 0:
+        raise RuntimeError(
+            "Producer received zero FileAdapter inputs; check RC_WORKITEM_INPUT_PATH"
+        )
 
 
 @task
