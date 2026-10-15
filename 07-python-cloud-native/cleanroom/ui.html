@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Clean Room flight recorder</title>
+<style>
+:root{color-scheme:dark;font:16px system-ui,sans-serif;background:#10191e;color:#e0e9ea}body{margin:0 auto;max-width:1100px;padding:2rem}header{border-bottom:1px solid #3d565d;padding-bottom:1.5rem}h1{font-weight:600;margin:.25rem 0}p{color:#b3c8ce;line-height:1.5}#state{display:inline-block;padding:.35rem .65rem;background:#274048;border-radius:.3rem}#connection{font-size:.85rem}ol{list-style:none;padding:0}li{border-left:3px solid #7cc1bc;background:#18272e;padding:1rem;margin:1rem 0}h2{font-size:1rem;margin:0 0 .6rem}time{font-family:monospace;color:#b3c8ce}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.85rem}footer{color:#b3c8ce;font-size:.85rem}a{color:#8bdbd3}
+</style>
+<header><p>RCC · local evidence</p><h1>Clean Room flight recorder</h1><p>Immutable environments, separately verified source, and synthetic document redaction. Every card comes from a recorded observation.</p><span id="state">Active · awaiting closure evidence</span><p id="connection">Connecting to local recorder</p></header>
+<main><p id="count">0 recorded events</p><ol id="events"></ol></main>
+<footer>Times are actual UTC observations. A hash chain detects changes; it does not authenticate the recorder or prove workload claims. Run Verify to check the underlying evidence independently.</footer>
+<!-- recorded-events -->
+<script>
+'use strict';
+const list=document.getElementById('events');
+const state=document.getElementById('state');
+const connection=document.getElementById('connection');
+const seen=new Set();
+function add(event){
+ if(seen.has(event.seq))return;
+ seen.add(event.seq);
+ const card=document.createElement('li');
+ const title=document.createElement('h2');title.textContent='#'+event.seq+' · '+event.kind;
+ const time=document.createElement('time');time.textContent=event.timestamp;time.dateTime=event.timestamp;
+ const body=document.createElement('pre');const detail={...event};delete detail.timestamp;delete detail.kind;delete detail.seq;body.textContent=JSON.stringify(detail,null,2);
+ card.append(title,time,body);list.append(card);
+ document.getElementById('count').textContent=seen.size+' recorded events';
+ // Only the conductor may record closure, after writing its evidence artifact.
+ if(event.kind==='closure'&&event.evidence){state.textContent='Closed · '+(event.status||'inspect evidence');}
+}
+const recorded=document.getElementById('recorded-events');
+if(recorded){JSON.parse(recorded.textContent).forEach(add);connection.textContent='Recorded snapshot · no live connection';}
+else{
+ const source=new EventSource('/events');
+ source.onopen=()=>{connection.textContent='Live · loopback recorder connected';};
+ source.onmessage=message=>{try{add(JSON.parse(message.data));}catch(error){connection.textContent='Invalid event received';}};
+ source.onerror=()=>{connection.textContent='Reconnecting · recorded cards retained';};
+ window.addEventListener('pagehide',()=>source.close(),{once:true});
+}
+</script>
+</html>
