@@ -1,6 +1,6 @@
 # Template Showcase Scorecard
 
-This scorecard keeps the showcase pass focused on the six public templates in
+This scorecard keeps the showcase pass focused on the seven public templates in
 `templates.yaml`. The maintenance robot stays repo infrastructure unless the
 catalog intentionally promotes it later.
 
@@ -25,6 +25,7 @@ Each public template should answer these questions from its README:
 | `04-python-assistant-ai` | Assistant/AI robot with explicit credential boundary | `rcc-robots` | `rcc run --dev -t TestKeys` plus documented assistant run | Do not commit credentials or imply no key is needed. |
 | `05-python-action-server-work-items` | Reference-grade Action Server work item template | `action-server`, `rcc-workitems` | Existing backend smoke tasks | Tighten real gaps only; avoid churn. |
 | `06-python-uv-native` | RCC robot showing uv-native dependency setup | `rcc-robots` | `rcc run -t RunTask` | Make uv value clear; do not duplicate `01-python`. |
+| `07-python-cloud-native` | Self-hosted Environment Artifacts + `.rcca` | `rcc env`, `rcc provider`, `rcc cache serve` | `rcc run -t RunTask` plus `bash scripts/smoke-lifecycle.sh` | Require strict unsigned refusal, A-to-B acquire, lease, warm reuse and offline archive. |
 
 ## Integration Checks
 

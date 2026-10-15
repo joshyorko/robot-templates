@@ -1,0 +1,51 @@
+name: Cloud-Native RCC Template Smoke
+
+on:
+  pull_request:
+    paths:
+      - "07-python-cloud-native/**"
+      - ".github/workflows/cloud-native-smoke.yaml"
+      - "templates.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  artifact-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      RCC_HOLOTREE_MODE: private
+      ROBOCORP_HOME: ${{ runner.temp }}/rcc-source-smoke
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate template sources
+        run: |
+          bash -n 07-python-cloud-native/scripts/smoke-lifecycle.sh
+          python3 -m py_compile 07-python-cloud-native/tasks.py
+          command -v jq
+
+      - name: Install checksum-verified RCC v18.19.6
+        run: |
+          curl -fsSL --retry 3 --retry-delay 2 \
+            https://github.com/joshyorko/rcc/releases/download/v18.19.6/rcc-linux64 \
+            -o "$RUNNER_TEMP/rcc"
+          printf '%s  %s\n' \
+            '2036b84ec8637e76ea41ab90abd2963357b1fed5ceb9a4e58fe852c67baaff1e' \
+            "$RUNNER_TEMP/rcc" | sha256sum --check -
+          chmod +x "$RUNNER_TEMP/rcc"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Run RCC-managed source task
+        working-directory: 07-python-cloud-native
+        run: |
+          rcc version
+          rcc run -r robot.yaml -t RunTask --silent
+          test -s output/cloud-native-smoke.json
+
+      - name: Verify A-to-B artifact lifecycle and offline .rcca
+        working-directory: 07-python-cloud-native
+        run: bash scripts/smoke-lifecycle.sh

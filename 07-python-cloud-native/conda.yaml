@@ -1,0 +1,7 @@
+# uv-native RCC: omit channels. These top-level pins select RCC's
+# Python/uv bootstrap; the pip section does not override the uv version.
+dependencies:
+  - python=3.12.11
+  - uv=0.11.14
+  - pip:
+    - robocorp==3.1.1
