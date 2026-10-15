@@ -17,7 +17,6 @@ jobs:
     timeout-minutes: 45
     env:
       RCC_HOLOTREE_MODE: private
-      ROBOCORP_HOME: ${{ runner.temp }}/rcc-source-smoke
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,6 +40,8 @@ jobs:
 
       - name: Run RCC-managed source task
         working-directory: 07-python-cloud-native
+        env:
+          ROBOCORP_HOME: ${{ runner.temp }}/rcc-source-smoke
         run: |
           rcc version
           rcc run -r robot.yaml -t RunTask --silent
