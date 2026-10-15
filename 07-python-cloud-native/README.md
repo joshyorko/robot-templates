@@ -8,6 +8,52 @@ export/import a `.rcca` archive without Robocorp Control Room.
 
 ## Quick start
 
+### Clean Room on a local Linux amd64 host
+
+Prerequisites: checksum-verified RCC v18.19.6, OpenSSL 3, and a working local
+Docker engine. Provision an approved glibc-based Python 3.12 container image
+first. Set `CLEAN_ROOM_IMAGE` to its local `sha256:` image ID or digest-pinned
+reference. The conductor never pulls images or installs host packages. It
+rejects remote Docker endpoints and uses the inspected immutable image ID.
+
+From this directory, run `rcc run -t CleanRoom --silent`. The default is two
+online workers, one `network:none` worker, four synthetic PDFs and two
+redaction rounds. For a reduced corpus, use
+`rcc task script -- python -m cleanroom.control run --documents 2 --no-ui`.
+
+The run prints the loopback flight-recorder URL while active. It writes a
+self-contained `output/clean-room-*/report.html` and raw evidence. The server
+closes when the run ends. Reopen it with
+`rcc task script -- python -m cleanroom.control serve`. Run `rcc run -t Verify`
+to independently check the latest run, `rcc run -t Down` to remove only its
+labelled resources, and `rcc run -t Contract` for protocol and evidence tests.
+`--root` selects a specific saved run for the underlying control CLI.
+
+Only the builder downloads packages. Workers have private `/rcc-home` mounts,
+read-only verified source and a trusted deployment-owned detached carrier.
+The HTTPS edge shares the loopback provider's container namespace, requires
+authentication, publishes no host port and denies admin and trust writes.
+Container isolation supplies the execution boundary; RCC is not a sandbox.
+Private demo keys are ephemeral and removed before completion. Public site
+roots and carrier files remain for offline verification within 24 hours.
+
+This workload renders digital PDF text with PDFium/Pillow into flattened
+redacted PNGs and text. It does **not** perform OCR. Verify checks labelled
+sensitive glyph pixels, unchanged safe pixels, expected text, byte determinism,
+strict acquisition/lease receipts, source/environment identities and archive
+limits. A `.rcca` holds the environment, not source or detached attestations.
+Artifact signatures do not authenticate the detached provenance/revocation
+metadata; that carrier is trusted local deployment input. No provider-only
+compromise claim is made. `run-from-bundle` is not used.
+
+The separate headless CI workflow needs an approved digest-pinned
+`CLEAN_ROOM_IMAGE` repository variable or manual `base_image` input. It fails
+closed when that prerequisite is absent. Tesseract, signer rotation, attack
+scenarios and fair cold/warm benchmarks are optional, unproven tiers. No
+performance or 90-second runtime claim is made.
+
+### Original lifecycle smoke
+
 Run from the template directory, on Linux or macOS:
 
 ```sh

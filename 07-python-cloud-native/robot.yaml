@@ -2,6 +2,14 @@
 tasks:
   RunTask:
     shell: python -m robocorp.tasks run tasks.py -t cloud_native_smoke
+  CleanRoom:
+    shell: python -m cleanroom.control run
+  Verify:
+    shell: python -m cleanroom.control verify
+  Down:
+    shell: python -m cleanroom.control down
+  Contract:
+    shell: python -m cleanroom.control contract
 environmentConfigs:
   - conda.yaml
 artifactsDir: output

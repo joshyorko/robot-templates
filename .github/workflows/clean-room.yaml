@@ -1,0 +1,76 @@
+name: Clean Room evidence
+
+on:
+  pull_request:
+    paths:
+      - "07-python-cloud-native/**"
+      - ".github/workflows/clean-room.yaml"
+  workflow_dispatch:
+    inputs:
+      base_image:
+        description: "Approved glibc Python 3.12 image reference with @sha256 digest"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  headless-two-workers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      RCC_HOLOTREE_MODE: private
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install checksum-verified RCC v18.19.6
+        run: |
+          curl -fsSL --retry 3 https://github.com/joshyorko/rcc/releases/download/v18.19.6/rcc-linux64 -o "$RUNNER_TEMP/rcc"
+          printf '%s  %s\n' '2036b84ec8637e76ea41ab90abd2963357b1fed5ceb9a4e58fe852c67baaff1e' "$RUNNER_TEMP/rcc" | sha256sum --check -
+          chmod +x "$RUNNER_TEMP/rcc"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Prepare container prerequisite and pin its immutable identity
+        env:
+          BASE_IMAGE: ${{ inputs.base_image || vars.CLEAN_ROOM_IMAGE }}
+        run: |
+          if ! [[ "$BASE_IMAGE" =~ ^[a-zA-Z0-9./:_-]+@sha256:[0-9a-f]{64}$ ]]; then
+            echo 'Set CLEAN_ROOM_IMAGE repository variable to an approved Python 3.12 glibc image@sha256 digest.' >&2
+            exit 2
+          fi
+          docker pull --platform linux/amd64 "$BASE_IMAGE"
+          image_id="$(docker image inspect "$BASE_IMAGE" --format '{{.Id}}')"
+          echo "CLEAN_ROOM_IMAGE=$image_id" >> "$GITHUB_ENV"
+      - name: Contract tests in pinned RCC runtime
+        working-directory: 07-python-cloud-native
+        env:
+          ROBOCORP_HOME: ${{ runner.temp }}/rcc-clean-room-controller
+        run: rcc run -t Contract --silent
+      - name: Two online workers plus one network-none worker
+        working-directory: 07-python-cloud-native
+        env:
+          ROBOCORP_HOME: ${{ runner.temp }}/rcc-clean-room-controller
+        run: |
+          rcc task script -- python -m cleanroom.control run --workers 2 --documents 2 --no-ui
+          rcc run -t Verify --silent
+      - name: Clean only this run's resources
+        if: always()
+        working-directory: 07-python-cloud-native
+        run: |
+          if test -f output/clean-room-latest.json; then
+            python3 -m cleanroom.control down
+          fi
+      - name: Retain evidence without private homes or secrets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clean-room-evidence
+          path: |
+            07-python-cloud-native/output/**/events.jsonl
+            07-python-cloud-native/output/**/report.html
+            07-python-cloud-native/output/**/closure.json
+            07-python-cloud-native/output/**/verification.json
+            07-python-cloud-native/output/**/run.json
+            07-python-cloud-native/output/**/evidence/**
+            07-python-cloud-native/output/**/workers/*/receipt.json
+            07-python-cloud-native/output/**/workers/*/output/**
+          if-no-files-found: warn
