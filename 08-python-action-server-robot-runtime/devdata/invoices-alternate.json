@@ -1,0 +1,16 @@
+{
+  "invoices": [
+    {
+      "invoice_id": "ALT-2001",
+      "vendor": "Adventure Works",
+      "amount_cents": 175000,
+      "currency": "USD"
+    },
+    {
+      "invoice_id": "ALT-2002",
+      "vendor": "Tailspin Toys",
+      "amount_cents": 7900,
+      "currency": "USD"
+    }
+  ]
+}

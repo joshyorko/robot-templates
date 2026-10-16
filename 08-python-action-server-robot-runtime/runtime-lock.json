@@ -1,0 +1,27 @@
+{
+  "python": "3.13",
+  "platform": "linux-x86_64",
+  "actions_community_revision_reviewed": "a70993fafc99a9f94041485542d5a720797ca394",
+  "bundled_rcc": {
+    "version": "18.19.3",
+    "filename": "rcc-linux64",
+    "url": "https://github.com/joshyorko/rcc/releases/download/v18.19.3/rcc-linux64",
+    "sha256": "7e588c01751ca2ae15ba13ef67f2f4b7567697a5a8389737059a73936f509428"
+  },
+  "packages": [
+    {
+      "name": "actions-runtime",
+      "version": "1.0.2",
+      "filename": "actions_runtime-1.0.2-cp313-cp313-manylinux_2_17_x86_64.manylinux_2_5_x86_64.manylinux1_x86_64.manylinux2014_x86_64.whl",
+      "url": "https://files.pythonhosted.org/packages/cf/b7/75a2b9959782c120f0503a9f397f26afe6ff293eccbffb635f3c941bc57d/actions_runtime-1.0.2-cp313-cp313-manylinux_2_17_x86_64.manylinux_2_5_x86_64.manylinux1_x86_64.manylinux2014_x86_64.whl",
+      "sha256": "c3b4c796241e5e03774931b5c3a4b9829e645f0088132c3be63233e77283aca2"
+    },
+    {
+      "name": "actions-core",
+      "version": "1.0.1",
+      "filename": "actions_core-1.0.1-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/56/77/adaf689249495e950c4fbc9da2b08794a4d02992e153b5752850045855e8/actions_core-1.0.1-py3-none-any.whl",
+      "sha256": "8664a408864501f87a8b1ed90a1c28c0c1eb7bbc6de5a8d36672a1056bf81811"
+    }
+  ]
+}

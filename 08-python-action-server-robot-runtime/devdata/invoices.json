@@ -1,0 +1,22 @@
+{
+  "invoices": [
+    {
+      "invoice_id": "INV-1001",
+      "vendor": "Northwind Paper",
+      "amount_cents": 2450,
+      "currency": "USD"
+    },
+    {
+      "invoice_id": "INV-1002",
+      "vendor": "Contoso Parts",
+      "amount_cents": 125000,
+      "currency": "USD"
+    },
+    {
+      "invoice_id": "INV-1003",
+      "vendor": "Fabrikam Office",
+      "amount_cents": 50000,
+      "currency": "USD"
+    }
+  ]
+}
