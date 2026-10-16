@@ -9,6 +9,7 @@ import os
 import platform
 import secrets
 import shutil
+import signal
 import socket
 import subprocess
 import sys
@@ -210,8 +211,12 @@ class LocalActionServer:
                 "HOME": str(self.home),
                 "ACTIONS_HOME": str(self.actions_home),
                 "ROBOTS_HOME": str(self.robots_home),
+                "ROBOCORP_HOME": str(self.actions_home),
+                "RCC_HOLOTREE_MODE": "private",
             }
         )
+        for name in ("INVOICE_INPUT", "ROBOT_ARTIFACTS"):
+            env.pop(name, None)
         command = [
             str(Path(self.runtime["runtime_venv"]) / "bin" / "action-server"),
             "start",
@@ -219,8 +224,7 @@ class LocalActionServer:
             "127.0.0.1",
             "--port",
             self.base_url.rsplit(":", 1)[1],
-            "--api-key",
-            self.api_key,
+            f"--api-key={self.api_key}",
             "--dir",
             str(self.actions_dir),
             "--datadir",
@@ -262,11 +266,11 @@ class LocalActionServer:
     def close(self) -> None:
         process = getattr(self, "process", None)
         if process is not None and process.poll() is None:
-            process.terminate()
+            os.killpg(process.pid, signal.SIGTERM)
             try:
                 process.wait(timeout=10)
             except subprocess.TimeoutExpired:
-                process.kill()
+                os.killpg(process.pid, signal.SIGKILL)
                 process.wait(timeout=5)
         log_file = getattr(self, "server_log_file", None)
         if log_file is not None and not log_file.closed:

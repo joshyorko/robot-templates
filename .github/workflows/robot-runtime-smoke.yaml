@@ -38,6 +38,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - name: Install pinned user-space runtime bootstrap
+        if: matrix.mode == 'B'
+        run: python3 -m pip install uv==0.11.14
       - name: Install checksum-pinned RCC v18.19.7
         shell: bash
         run: |
@@ -77,3 +80,16 @@ jobs:
             08-python-action-server-robot-runtime/output/ci/A/*/output/report.json
             08-python-action-server-robot-runtime/output/ci/A/*/output/results.csv
             08-python-action-server-robot-runtime/output/ci/A/*/output/failure.json
+            08-python-action-server-robot-runtime/output/ci/B/mode-b.json
+            08-python-action-server-robot-runtime/output/ci/B/catalog-*.json
+            08-python-action-server-robot-runtime/output/ci/B/import.json
+            08-python-action-server-robot-runtime/output/ci/B/persisted-runs.json
+            08-python-action-server-robot-runtime/output/ci/B/runs/*/*.json
+            08-python-action-server-robot-runtime/output/ci/B/runs/*/imported-robot-output/*
+            08-python-action-server-robot-runtime/output/ci/B/runs/*/api-artifacts/__action_server_output.txt
+            08-python-action-server-robot-runtime/output/ci/B/runs/*/api-artifacts/report.json
+            08-python-action-server-robot-runtime/output/ci/B/runs/*/api-artifacts/results.csv
+            08-python-action-server-robot-runtime/output/ci/C/mode-c.json
+            08-python-action-server-robot-runtime/output/ci/C/logs/*
+            08-python-action-server-robot-runtime/output/ci/C/receipts/*.json
+            08-python-action-server-robot-runtime/output/ci/C/task-output/*

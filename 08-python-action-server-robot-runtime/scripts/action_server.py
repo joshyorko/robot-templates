@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import socket
+import sqlite3
 import subprocess
 import sys
 import time
@@ -358,6 +359,11 @@ def _execute_mode(
     if not isinstance(imported_path_value, str) or not imported_path_value:
         raise ActionServerError("robot import response did not include robot_path")
     imported_root = Path(imported_path_value).resolve()
+    private_home = runtime_info.get("private_home")
+    if private_home and not imported_root.is_relative_to(Path(private_home) / ".robots"):
+        raise ActionServerError("import returned a path outside the private robots directory")
+    if workload.source_digest(imported_root) != source_sha:
+        raise ActionServerError("imported robot source digest differs from reviewed source")
     catalog_after = client.get_json("/api/robots/catalog")
     _write_json(evidence_dir / "catalog-after.json", catalog_after)
     catalog_paths = {
@@ -440,6 +446,42 @@ def _execute_mode(
     required_reports_in_api = (
         not input_run["artifacts"]["required_robot_outputs_missing"]
     )
+    api_output_checks = {}
+    for name, run, fixture in [
+        ("baseline", baseline_run, "invoices.json"),
+        ("alternate", input_run, "invoices-alternate.json"),
+    ]:
+        try:
+            api_output_checks[name] = workload.verify_outputs(
+                Path(run["evidence_dir"]) / "api-artifacts",
+                imported_root / "devdata" / fixture,
+            )
+        except (OSError, ValueError, KeyError) as error:
+            api_output_checks[name] = {"error": str(error)}
+    persisted_records = []
+    datadir = runtime_info.get("private_datadir")
+    runs = [baseline_run, input_run, failure_run]
+    if datadir:
+        for database in Path(datadir).glob("*.db"):
+            with sqlite3.connect(database.as_uri() + "?mode=ro", uri=True) as connection:
+                connection.row_factory = sqlite3.Row
+                if not connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='run'"
+                ).fetchone():
+                    continue
+                persisted_records = [dict(row) for row in connection.execute(
+                    "SELECT id,status,inputs,robot_package_path,robot_task_name FROM run "
+                    "WHERE id IN (?,?,?)", [run["run_id"] for run in runs]
+                )]
+                break
+    persisted_by_id = {row["id"]: row for row in persisted_records}
+    persisted_ok = all(
+        run["run_id"] in persisted_by_id
+        and _normalize_status(persisted_by_id[run["run_id"]]["status"]) == run["status"]
+        and persisted_by_id[run["run_id"]]["inputs"] == run["run_detail"]["inputs"]
+        for run in runs
+    )
+    _write_json(evidence_dir / "persisted-runs.json", persisted_records)
     logs_persisted = bool(input_run["artifacts"]["log_files"])
     checks = {
         "catalog_visible": catalog_visible,
@@ -454,6 +496,11 @@ def _execute_mode(
         and failure_output.get("status") == "FAIL",
         "report_and_csv_persisted_in_api_artifacts": required_reports_in_api,
         "run_logs_persisted_in_api_artifacts": logs_persisted,
+        "downloaded_outputs_match_fixed_truth": all(
+            item.get("ground_truth_match") is True for item in api_output_checks.values()
+        ),
+        "independent_database_records_match_api": persisted_ok,
+        "imported_source_digest_matches": workload.source_digest(imported_root) == source_sha,
     }
     reasons = []
     if not inputs_recorded:
@@ -495,6 +542,8 @@ def _execute_mode(
             "baseline_run_id": baseline_run["run_id"],
         },
         "runs": {"baseline": baseline_run, "validation": input_run, "failure": failure_run},
+        "api_output_checks": api_output_checks,
+        "persisted_records": persisted_records,
         "durations_seconds": {
             "baseline": baseline_run["duration_seconds"],
             "validation": input_run["duration_seconds"],
@@ -566,7 +615,7 @@ def run_mode(
         if not api_key:
             return _blocked(evidence_dir, "ACTIONS_RUNTIME_API_KEY_REQUIRED_FOR_EXTERNAL_LOOPBACK_SERVER")
         runtime_info = {"runtime_version": "external", "server_url": server_url}
-        client = ActionServerClient(server_url, api_key, timeout=min(timeout, 60))
+        client = ActionServerClient(server_url, api_key, timeout=min(timeout, 600))
         try:
             return _execute_mode(root, evidence_dir, rcc, client=client, runtime_info=runtime_info, timeout=timeout)
         except (ActionServerError, OSError, ValueError, TimeoutError, RuntimeError) as error:
@@ -590,7 +639,7 @@ def run_mode(
                     "server_log": str(server.server_log),
                 }
             )
-            client = ActionServerClient(server.base_url, server.api_key, timeout=min(timeout, 60))
+            client = ActionServerClient(server.base_url, server.api_key, timeout=min(timeout, 600))
             result = _execute_mode(
                 root,
                 evidence_dir,
@@ -603,4 +652,8 @@ def run_mode(
         _write_json(evidence_dir / "mode-b.json", result)
         return result
     except (ActionServerError, RuntimeSetupError, OSError, ValueError, TimeoutError, RuntimeError) as error:
-        return _blocked(evidence_dir, "LOCAL_ACTION_SERVER_OR_API_FAILED", error=str(error))
+        paths = {"server_log": str(server.server_log)} if "server" in locals() and hasattr(
+            server, "server_log"
+        ) else {}
+        return _blocked(evidence_dir, "LOCAL_ACTION_SERVER_OR_API_FAILED", error=str(error),
+                        evidence_paths=paths)

@@ -14,7 +14,7 @@ artifact-backed robot worker. That fourth path remains **NOT IMPLEMENTED** until
 
 Run commands from this template directory. RCC v18.19.7 is required for the
 comparison. The driver verifies the released binary's SHA-256 before running.
-Python 3.12 or 3.13, OpenSSL, and network access for initial environment/runtime
+Python 3.13, uv 0.11.14, OpenSSL, and network access for initial environment/runtime
 setup are prerequisites. Use a development container or user-scoped tooling on
 Bluefin; no host package layering is needed. The invoice task itself is offline.
 Large RCC homes belong on disk, not a small `/tmp` tmpfs.
@@ -37,6 +37,21 @@ existing roots are not overwritten. `--rcc /absolute/path/to/rcc` selects the
 binary, subject to the same version and checksum verification. B can target an
 explicit isolated loopback server with `--server-url`; its prerequisite and
 identity must be recorded separately.
+
+B installs SHA-256-verified `actions-runtime==1.0.2` and `actions-core==1.0.1`
+wheels into a private Python 3.13 venv. `runtime-lock.json` records their URLs and
+hashes, the reviewed Actions source revision, and the runtime's bundled RCC
+v18.19.3 hash. That server binary is verified before submitting robot tasks.
+It is distinct from the host RCC v18.19.7 used by A/C. Transitive runtime
+dependencies are resolved at setup and are not all hash locked.
+
+The qualified published runtime currently fails B acceptance. It records the
+alternate input but executes the default fixture, and collects logs while
+omitting canonical workload files from run artifacts. These defects are tracked
+in [Actions #315](https://github.com/joshyorko/actions/issues/315) and
+[#316](https://github.com/joshyorko/actions/issues/316). Baseline and deliberate
+failure runs do execute. The comparison must keep reporting FAIL until the
+input and durable-output checks pass on a newly qualified runtime.
 
 ## What the comparison proves
 
