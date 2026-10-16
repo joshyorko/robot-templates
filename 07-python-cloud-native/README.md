@@ -1,6 +1,6 @@
 # RCC Cloud-Native + .rcca Environment Artifact Template
 
-This is a runnable, **self-hosted RCC v18.19.6** example. It goes beyond
+This is a runnable, **self-hosted RCC v18.19.7** example. It goes beyond
 `06-python-uv-native` by showing how to build an environment once, publish its
 content-addressed `sha256:` Environment Artifact, acquire it from another
 worker, hold an execution lease, reuse it with the provider offline, and
@@ -10,7 +10,7 @@ export/import a `.rcca` archive without Robocorp Control Room.
 
 ### Clean Room on a local Linux amd64 host
 
-Prerequisites: checksum-verified RCC v18.19.6, OpenSSL 3, and a working local
+Prerequisites: checksum-verified RCC v18.19.7, OpenSSL 3, and a working local
 Docker engine. Provision an approved glibc-based Python 3.12 container image
 first. Set `CLEAN_ROOM_IMAGE` to its local `sha256:` image ID or digest-pinned
 reference. The conductor never pulls images or installs host packages. It
@@ -46,9 +46,9 @@ Artifact signatures do not authenticate the detached provenance/revocation
 metadata; that carrier is trusted local deployment input. No provider-only
 compromise claim is made. `run-from-bundle` is not used.
 
-The separate headless CI workflow needs an approved digest-pinned
-`CLEAN_ROOM_IMAGE` repository variable or manual `base_image` input. It fails
-closed when that prerequisite is absent. Tesseract, signer rotation, attack
+The separate headless CI workflow defaults to the tested digest-pinned image.
+Override it with a digest-pinned `CLEAN_ROOM_IMAGE` repository variable or
+manual `base_image` input. Tesseract, signer rotation, attack
 scenarios and fair cold/warm benchmarks are optional, unproven tiers. No
 performance or 90-second runtime claim is made.
 

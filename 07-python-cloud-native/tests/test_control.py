@@ -3,10 +3,16 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from cleanroom.control import check_binary, archive_info, resource_names, local_endpoint
+from cleanroom.control import check_binary, archive_info, resource_names, local_endpoint, write_json
 
 
 class ControlTests(unittest.TestCase):
+    def test_runtime_roots_use_rcc_canonical_json(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "roots.json"
+            write_json(path, {"z-key": "second", "a-key": "first"}, canonical=True)
+            self.assertEqual(path.read_bytes(), b'{"a-key":"first","z-key":"second"}\n')
+
     def test_remote_engine_endpoints_rejected(self):
         self.assertTrue(local_endpoint("unix:///var/run/docker.sock"))
         for endpoint in ("ssh://other", "tcp://127.0.0.1:2375", "unix://relative", "http://remote", ""):

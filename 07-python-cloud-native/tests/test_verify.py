@@ -210,7 +210,7 @@ class VerifyTest(unittest.TestCase):
 
     def test_binary_mutation(self):
         self.write("tools/rcc", "Not the pinned RCC bytes")
-        self.rejected("RCC v18.19.6 binary checksum mismatch")
+        self.rejected("RCC binary checksum mismatch")
 
     def test_remaining_secrets(self):
         self.write("secrets/token", "unit-test-placeholder")

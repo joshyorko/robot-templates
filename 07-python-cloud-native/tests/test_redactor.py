@@ -1,6 +1,7 @@
 import hashlib
 import importlib.util
 import json
+from contextlib import closing
 from pathlib import Path
 import tempfile
 import unittest
@@ -118,7 +119,7 @@ class CorpusTest(unittest.TestCase):
                     self.assertNotIn(label["value"], json.dumps(first))
                 for safe in document["safe_text"]:
                     self.assertIn(safe, first["text"])
-                with pdfium.PdfDocument(corpus / document["pdf"]) as source:
+                with closing(pdfium.PdfDocument(corpus / document["pdf"])) as source:
                     page = source[0]
                     bitmap = page.render(scale=2)
                     original = bitmap.to_pil().convert("RGB")

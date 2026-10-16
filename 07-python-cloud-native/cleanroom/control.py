@@ -24,9 +24,10 @@ from cleanroom.recorder import Recorder, report, start_server
 from redactor.corpus import generate
 from redactor.integrity import source_digest
 
-RCC_SHA256 = "2036b84ec8637e76ea41ab90abd2963357b1fed5ceb9a4e58fe852c67baaff1e"
+RCC_SHA256 = "f8e0394be7f47ee84d6f4cd734822b87b492a4d6102f977f6a18f29453703d48"
+RCC_PREVIOUS_SHA256 = "2036b84ec8637e76ea41ab90abd2963357b1fed5ceb9a4e58fe852c67baaff1e"
 TEMPLATE = Path(__file__).resolve().parent.parent
-DEFAULT_IMAGE = "python:3.12.11-slim-bookworm"
+DEFAULT_IMAGE = "docker.io/library/python@sha256:c00fc7b44d844b6da22861ec24af43968a5200eac4ec607b4725d585165d6b49"
 
 
 def sha(path):
@@ -34,17 +35,18 @@ def sha(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def write_json(path, value):
+def write_json(path, value, *, canonical=False):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(json.dumps(value, indent=None if canonical else 2, sort_keys=True,
+                                    separators=(",", ":") if canonical else None) + "\n")
     temporary.replace(path)
 
 
 def check_binary(path):
-    if sha(path) != RCC_SHA256:
-        raise ValueError("RCC v18.19.6 checksum mismatch; refusing execution")
+    if sha(path) not in (RCC_SHA256, RCC_PREVIOUS_SHA256):
+        raise ValueError("RCC binary checksum mismatch; refusing execution")
     return str(Path(path).resolve())
 
 
@@ -143,7 +145,7 @@ class Lab:
         if sys.platform != "linux" or os.uname().machine != "x86_64":
             raise RuntimeError("Clean Room requires linux_amd64")
         if not self.rcc:
-            raise RuntimeError("Install checksum-verified RCC v18.19.6 first")
+            raise RuntimeError("Install checksum-verified RCC v18.19.7 first")
         self.rcc = check_binary(self.rcc)
         self.command([self.rcc, "version"], "rcc-version",
                      env=dict(os.environ, ROBOCORP_HOME=str(self.root / "preflight-home"), RCC_HOLOTREE_MODE="private"))
@@ -229,7 +231,7 @@ class Lab:
             raise RuntimeError("Source changed during staging")
         generate(self.root / "corpus", self.documents)
         self.manifest = {"schema": 1, "run_id": self.run_id, "source": "source",
-                         "source_digest": self.source, "rcc_sha256": RCC_SHA256,
+                         "source_digest": self.source, "rcc_sha256": sha(self.rcc),
                          "rcc_binary": "tools/rcc",
                          "corpus": "corpus", "corpus_sha256": sha(self.root / "corpus/corpus.json"),
                          "network": "evidence/network.json", "workers": [], "image_id": self.image}
@@ -243,7 +245,7 @@ class Lab:
         if private[:-32].hex() != "302e020100300506032b657004220420" or public[:-32].hex() != "302a300506032b6570032100":
             raise RuntimeError("Unexpected OpenSSL Ed25519 key encoding")
         (secret / "seed").write_bytes(private[-32:])
-        write_json(self.root / "roots.json", {"clean-room-demo": base64.b64encode(public[-32:]).decode().rstrip("=")})
+        write_json(self.root / "roots.json", {"clean-room-demo": base64.b64encode(public[-32:]).decode().rstrip("=")}, canonical=True)
         self.manifest["roots_sha256"] = sha(self.root / "roots.json")
         self.command(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
                       "-subj", "/CN=clean-room-edge", "-addext", "subjectAltName=DNS:clean-room-edge",

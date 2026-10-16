@@ -8,6 +8,7 @@ arbitrary logs supplied by an adversary. Missing evidence never means success.
 import argparse
 import base64
 from collections import Counter
+from contextlib import closing
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
@@ -25,7 +26,8 @@ from redactor.integrity import source_digest
 
 HEX = re.compile(r"[0-9a-f]{64}")
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
-RCC_SHA256 = "2036b84ec8637e76ea41ab90abd2963357b1fed5ceb9a4e58fe852c67baaff1e"
+RCC_SHA256 = "f8e0394be7f47ee84d6f4cd734822b87b492a4d6102f977f6a18f29453703d48"
+RCC_PREVIOUS_SHA256 = "2036b84ec8637e76ea41ab90abd2963357b1fed5ceb9a4e58fe852c67baaff1e"
 
 
 def require(condition, message):
@@ -284,12 +286,12 @@ def _verify_pixels(pdf_path, png_path, truth, masks):
         from PIL import Image, ImageChops, ImageDraw
     except ImportError as exc:
         raise ValueError("Pixel verification blocked: pinned PDFium and Pillow are required") from exc
-    with pdfium.PdfDocument(pdf_path) as pdf:
+    with closing(pdfium.PdfDocument(pdf_path)) as pdf:
         require(len(pdf) == 1, "Corpus PDF must have one page")
         page = pdf[0]
         textpage = page.get_textpage()
         try:
-            original_text = textpage.get_text_range()
+            original_text = textpage.get_text_range(count=textpage.count_chars())
             bitmap = page.render(scale=2)
             try:
                 original = bitmap.to_pil().convert("RGB")
@@ -398,9 +400,9 @@ def verify(root, *, require_closure=True):
         require(DIGEST.fullmatch(manifest["environment_digest"]), "Invalid environment identity")
         require(DIGEST.fullmatch(manifest["source_digest"]), "Invalid source identity")
         require(HEX.fullmatch(manifest["rcc_sha256"]), "Missing RCC binary identity")
-        require(manifest["rcc_sha256"] == RCC_SHA256
-                and sha256(inside(root, manifest["rcc_binary"])) == RCC_SHA256,
-                "RCC v18.19.6 binary checksum mismatch")
+        require(manifest["rcc_sha256"] in (RCC_SHA256, RCC_PREVIOUS_SHA256)
+                and sha256(inside(root, manifest["rcc_binary"])) == manifest["rcc_sha256"],
+                "RCC binary checksum mismatch")
         source = inside(root, manifest["source"])
         require({path.name for path in source.iterdir()} == {
             "redactor", "cleanroom", "clean-room-robot.yaml", "clean-room-environment.yaml"},

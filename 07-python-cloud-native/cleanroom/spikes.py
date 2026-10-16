@@ -44,7 +44,7 @@ def run(root):
         media = "application/vnd.rcc.environment."
         canonical(lab.root / "provenance.json", {"mediaType": media + "provenance.v1+json", "artifactDigest": artifact,
                   "specificationDigest": artifact, "platform": "linux_amd64", "builder": "demo-spike",
-                  "rccVersion": "v18.19.6", "createdAt": stamp})
+                  "rccVersion": "v18.19.7", "createdAt": stamp})
         canonical(lab.root / "sbom.json", {"mediaType": media + "sbom.spdx+json", "artifactDigest": artifact, "components": []})
         signature = {"mediaType": media + "signature.v1+json", "artifactDigest": artifact,
                      "keyID": "demo-spike", "algorithm": "Ed25519",

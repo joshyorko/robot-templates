@@ -23,15 +23,15 @@ jobs:
       RCC_HOLOTREE_MODE: private
     steps:
       - uses: actions/checkout@v4
-      - name: Install checksum-verified RCC v18.19.6
+      - name: Install checksum-verified RCC v18.19.7
         run: |
-          curl -fsSL --retry 3 https://github.com/joshyorko/rcc/releases/download/v18.19.6/rcc-linux64 -o "$RUNNER_TEMP/rcc"
-          printf '%s  %s\n' '2036b84ec8637e76ea41ab90abd2963357b1fed5ceb9a4e58fe852c67baaff1e' "$RUNNER_TEMP/rcc" | sha256sum --check -
+          curl -fsSL --retry 3 https://github.com/joshyorko/rcc/releases/download/v18.19.7/rcc-linux64 -o "$RUNNER_TEMP/rcc"
+          printf '%s  %s\n' 'f8e0394be7f47ee84d6f4cd734822b87b492a4d6102f977f6a18f29453703d48' "$RUNNER_TEMP/rcc" | sha256sum --check -
           chmod +x "$RUNNER_TEMP/rcc"
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - name: Prepare container prerequisite and pin its immutable identity
         env:
-          BASE_IMAGE: ${{ inputs.base_image || vars.CLEAN_ROOM_IMAGE }}
+          BASE_IMAGE: ${{ inputs.base_image || vars.CLEAN_ROOM_IMAGE || 'docker.io/library/python@sha256:c00fc7b44d844b6da22861ec24af43968a5200eac4ec607b4725d585165d6b49' }}
         run: |
           if ! [[ "$BASE_IMAGE" =~ ^[a-zA-Z0-9./:_-]+@sha256:[0-9a-f]{64}$ ]]; then
             echo 'Set CLEAN_ROOM_IMAGE repository variable to an approved Python 3.12 glibc image@sha256 digest.' >&2

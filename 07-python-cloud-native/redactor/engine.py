@@ -46,7 +46,7 @@ def redact_document(corpus, output, identity):
         page = pdf[0]
         textpage = page.get_textpage()
         try:
-            text = textpage.get_text_range()
+            text = textpage.get_text_range(count=textpage.count_chars())
             detected = spans(text)
             bitmap = page.render(scale=2)
             try:
