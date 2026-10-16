@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from invoice_robot import source_digest, validate_batch, verify_outputs
+from invoice_robot.validator import SOURCE_PATHS
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -72,7 +73,10 @@ class WorkloadTests(unittest.TestCase):
             copied = Path(temp_dir) / "template"
             import shutil
 
-            shutil.copytree(ROOT, copied, ignore=shutil.ignore_patterns("__pycache__"))
+            for relative in SOURCE_PATHS:
+                destination = copied / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(ROOT / relative, destination)
             self.assertEqual(first, source_digest(copied))
             with (copied / "invoice_robot/validator.py").open("a") as source:
                 source.write("\n# changed\n")

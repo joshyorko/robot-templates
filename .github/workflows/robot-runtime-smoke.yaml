@@ -1,0 +1,79 @@
+name: Robot runtime comparison
+
+on:
+  pull_request:
+    paths:
+      - '08-python-action-server-robot-runtime/**'
+      - '.github/workflows/robot-runtime-smoke.yaml'
+  push:
+    branches: ['feat/action-server-robot-runtime-20261016']
+    paths:
+      - '08-python-action-server-robot-runtime/**'
+      - '.github/workflows/robot-runtime-smoke.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: robot-runtime-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  acceptance:
+    name: Mode ${{ matrix.mode }} acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [A, B, C]
+    defaults:
+      run:
+        working-directory: 08-python-action-server-robot-runtime
+    env:
+      RCC_HOLOTREE_MODE: private
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install checksum-pinned RCC v18.19.7
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime/bin
+          curl --fail --location --retry 3 https://github.com/joshyorko/rcc/releases/download/v18.19.7/rcc-linux64 -o .runtime/bin/rcc
+          printf '%s  %s\n' f8e0394be7f47ee84d6f4cd734822b87b492a4d6102f977f6a18f29453703d48 .runtime/bin/rcc | sha256sum --check -
+          chmod +x .runtime/bin/rcc
+          echo "${GITHUB_WORKSPACE}/08-python-action-server-robot-runtime/.runtime/bin" >> "$GITHUB_PATH"
+      - name: Execute real selected mode
+        run: python3 scripts/compare.py --modes '${{ matrix.mode }}' --evidence output/ci
+      - name: Unit tests inside A's actual RCC environment
+        if: success() && matrix.mode == 'A'
+        env:
+          ROBOCORP_HOME: ${{ github.workspace }}/08-python-action-server-robot-runtime/output/ci/A/home
+        run: rcc run --dev -t TestWorkload --silent --no-build
+      - name: Wrap distributable template
+        if: success() && matrix.mode == 'A'
+        run: |
+          rcc robot wrap -d . -z output/template08.zip
+          python3 scripts/check_package.py output/template08.zip
+      - name: Upload bounded public evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-runtime-${{ matrix.mode }}-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            08-python-action-server-robot-runtime/output/ci/report.json
+            08-python-action-server-robot-runtime/output/ci/report.html
+            08-python-action-server-robot-runtime/output/ci/*-error.txt
+            08-python-action-server-robot-runtime/output/ci/A/*.json
+            08-python-action-server-robot-runtime/output/ci/A/*.stdout
+            08-python-action-server-robot-runtime/output/ci/A/*.stderr
+            08-python-action-server-robot-runtime/output/ci/A/*/run.*
+            08-python-action-server-robot-runtime/output/ci/A/*/output/report.json
+            08-python-action-server-robot-runtime/output/ci/A/*/output/results.csv
+            08-python-action-server-robot-runtime/output/ci/A/*/output/failure.json
