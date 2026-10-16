@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import platform
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -68,10 +69,16 @@ def command(args, *, cwd, env, prefix, timeout=1200):
     with prefix.with_suffix(".stdout").open("w") as stdout, \
             prefix.with_suffix(".stderr").open("w") as stderr:
         try:
-            process = subprocess.run(args, cwd=cwd, env=env, stdout=stdout,
-                                     stderr=stderr, timeout=timeout)
-            exit_code = process.returncode
+            process = subprocess.Popen(args, cwd=cwd, env=env, stdout=stdout,
+                                       stderr=stderr, start_new_session=True)
+            exit_code = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
+            os.killpg(process.pid, signal.SIGTERM)
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait()
             stderr.write(f"\nCommand timed out after {timeout} seconds.\n")
             exit_code = 124
     record = {"command": list(map(str, args)), "exit_code": exit_code,
