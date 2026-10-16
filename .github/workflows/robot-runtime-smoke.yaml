@@ -5,11 +5,10 @@ on:
     paths:
       - '08-python-action-server-robot-runtime/**'
       - '.github/workflows/robot-runtime-smoke.yaml'
-  push:
-    branches: ['feat/action-server-robot-runtime-20261016']
-    paths:
-      - '08-python-action-server-robot-runtime/**'
-      - '.github/workflows/robot-runtime-smoke.yaml'
+      - 'templates.yaml'
+      - 'docs/template-showcase-scorecard.md'
+      - 'docs/template08-dakota-acceptance.md'
+      - '.github/workflows/release.yaml'
   workflow_dispatch:
 
 permissions:
@@ -89,7 +88,10 @@ jobs:
             08-python-action-server-robot-runtime/output/ci/B/runs/*/api-artifacts/__action_server_output.txt
             08-python-action-server-robot-runtime/output/ci/B/runs/*/api-artifacts/report.json
             08-python-action-server-robot-runtime/output/ci/B/runs/*/api-artifacts/results.csv
-            08-python-action-server-robot-runtime/output/ci/C/mode-c.json
+            08-python-action-server-robot-runtime/output/ci/C/c-result.json
+            08-python-action-server-robot-runtime/output/ci/C/deployment-trust/*.json
+            08-python-action-server-robot-runtime/output/ci/C/detached-trust-carrier/**
             08-python-action-server-robot-runtime/output/ci/C/logs/*
             08-python-action-server-robot-runtime/output/ci/C/receipts/*.json
-            08-python-action-server-robot-runtime/output/ci/C/task-output/*
+            08-python-action-server-robot-runtime/output/ci/C/provider-output/*
+            08-python-action-server-robot-runtime/output/ci/C/archive-output/*

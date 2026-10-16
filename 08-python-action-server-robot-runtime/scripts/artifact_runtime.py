@@ -11,6 +11,7 @@ import os
 import queue
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -25,7 +26,6 @@ LOCK_PATH = Path(__file__).resolve().parents[1] / "rcc-lock.json"
 ARTIFACT_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 PINNED_RCC_SHA256 = "f8e0394be7f47ee84d6f4cd734822b87b492a4d6102f977f6a18f29453703d48"
 SIGNER_ID = "template-08-ephemeral-ed25519"
-DEAD_PROVIDER = "http://127.0.0.1:9/"
 
 
 class RuntimeFailure(RuntimeError):
@@ -132,15 +132,41 @@ def _run(
     step: str,
     expected_success: bool = True,
 ) -> subprocess.CompletedProcess[str]:
-    completed = subprocess.run(argv, cwd=cwd, env=dict(env), text=True, capture_output=True, check=False)
-    (logs / f"{step}.stdout.txt").write_text(completed.stdout, encoding="utf-8")
-    (logs / f"{step}.stderr.txt").write_text(completed.stderr, encoding="utf-8")
+    stdout_path = logs / f"{step}.stdout.txt"
+    stderr_path = logs / f"{step}.stderr.txt"
+    started = time.monotonic()
+    with stdout_path.open("w") as stdout, stderr_path.open("w") as stderr:
+        process = subprocess.Popen(argv, cwd=cwd, env=dict(env), stdout=stdout,
+                                   stderr=stderr, start_new_session=True)
+        try:
+            code = process.wait(timeout=1200)
+        except subprocess.TimeoutExpired:
+            os.killpg(process.pid, signal.SIGTERM)
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait()
+            stderr.write("\nCommand exceeded the 1200-second phase limit.\n")
+            code = 124
+    completed = subprocess.CompletedProcess(
+        argv, code, stdout_path.read_text(), stderr_path.read_text()
+    )
+    (logs / f"{step}.timing.json").write_text(json.dumps({
+        "exit_code": code, "duration_seconds": round(time.monotonic() - started, 6)
+    }) + "\n")
     (logs / f"{step}.exit-code").write_text(f"{completed.returncode}\n", encoding="ascii")
     if expected_success and completed.returncode != 0:
         raise RuntimeFailure(f"{step} failed with exit code {completed.returncode}; see evidence logs")
     if not expected_success and completed.returncode == 0:
         raise RuntimeFailure(f"{step} unexpectedly succeeded")
     return completed
+
+
+def _require_unknown_signer_rejection(completed):
+    diagnostic = (completed.stdout + "\n" + completed.stderr).lower()
+    if completed.returncode == 0 or "unknown-signer" not in diagnostic:
+        raise RuntimeFailure("negative acquisition did not specifically reject an unknown signer")
 
 
 def _rcc_json(
@@ -184,7 +210,8 @@ def _task_bootstrap(source_root: Path, input_path: Path, output_dir: Path) -> li
         "import os,runpy,sys; source,tasks,input_path,output_path=sys.argv[1:5]; "
         "sys.path.insert(0,source); os.environ['INVOICE_INPUT']=input_path; "
         "os.environ['ROBOT_ARTIFACTS']=output_path; "
-        "sys.argv=['robocorp.tasks','run',tasks,'-t','validate_batch_task']; "
+        "sys.argv=['robocorp.tasks','run',tasks,'-t','validate_batch_task',"
+        "'--output-dir',output_path]; "
         "runpy.run_module('robocorp.tasks',run_name='__main__')"
     )
     return [
@@ -411,6 +438,11 @@ def _run_mode(root: Path, evidence_dir: Path, rcc: str) -> dict[str, Any]:
             )
         finally:
             provider_server_exit = _stop_provider_server(provider_process, provider_stdout_thread, provider_stderr_thread, logs)
+        verification = provider_acquire.get("verification", {})
+        if (provider_acquire.get("cacheHit") != "provider"
+                or verification.get("valid") is not True
+                or verification.get("policyMode") != "strict-remote"):
+            raise RuntimeFailure("cold provider acquire did not prove strict verified provider acquisition")
         if provider_server_exit not in (0, -15, 143):
             raise RuntimeFailure(f"loopback provider server exited unexpectedly with code {provider_server_exit}")
 
@@ -480,9 +512,7 @@ def _run_mode(root: Path, evidence_dir: Path, rcc: str) -> dict[str, Any]:
             ],
             cwd=root, env=negative_env, logs=logs, step="acquire-unknown-signature", expected_success=False,
         )
-        diagnostic = (negative.stdout + "\n" + negative.stderr).lower()
-        if not any(word in diagnostic for word in ("signature", "signer", "trust")):
-            raise RuntimeFailure("unknown-signature acquisition failed without a trust/signature diagnostic")
+        _require_unknown_signer_rejection(negative)
 
     return {
         "status": "PASS",

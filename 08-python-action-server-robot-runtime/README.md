@@ -14,7 +14,7 @@ artifact-backed robot worker. That fourth path remains **NOT IMPLEMENTED** until
 
 Run commands from this template directory. RCC v18.19.7 is required for the
 comparison. The driver verifies the released binary's SHA-256 before running.
-Python 3.13, uv 0.11.14, OpenSSL, and network access for initial environment/runtime
+Python 3.13, uv, OpenSSL, and network access for initial environment/runtime
 setup are prerequisites. Use a development container or user-scoped tooling on
 Bluefin; no host package layering is needed. The invoice task itself is offline.
 Large RCC homes belong on disk, not a small `/tmp` tmpfs.
@@ -44,6 +44,13 @@ hashes, the reviewed Actions source revision, and the runtime's bundled RCC
 v18.19.3 hash. That server binary is verified before submitting robot tasks.
 It is distinct from the host RCC v18.19.7 used by A/C. Transitive runtime
 dependencies are resolved at setup and are not all hash locked.
+
+If the required RCC release is absent, install only a project-local binary:
+
+```sh
+python3 scripts/setup_rcc.py --destination .runtime/bin/rcc
+python3 scripts/compare.py --rcc .runtime/bin/rcc
+```
 
 The qualified published runtime currently fails B acceptance. It records the
 alternate input but executes the default fixture, and collects logs while
@@ -76,6 +83,28 @@ because `env exec` starts in the materialization root.
 transitive packages. RCC's immutable artifact identifies the actual resolved
 environment; the report retains its digest and receipts. Durations are observed
 local trials, not speedup claims or a production readiness claim.
+
+C publishes once into a private producer home, signs with an ephemeral Ed25519
+key outside the evidence tree, and exports a same-platform `.rcca` under the
+256 MiB limit. Deployment roots are compact canonical JSON with raw Ed25519
+public keys encoded as unpadded Base64. A temporary loopback `rcc cache serve`
+serves the producer's filesystem provider for strict acquisition into a fresh
+consumer home. After that server stops, warm acquisition and leased task
+execution use the verified local materialization.
+`ROBOCORP_HOME` separates runtime state; tasks run with the invoking user's
+permissions.
+
+A different fresh home imports the local archive using detached metadata and
+deployment roots, then executes the same reviewed source and declared task.
+Both execution receipts must record the artifact digest, strict valid trust,
+lease ID, completed status and exit zero. A fourth home uses a different trust
+root ID and must fail specifically with `unknown-signer`; malformed roots do
+not count as that negative proof. All task and framework outputs have explicit
+paths outside the environment materialization.
+
+The CI workflow runs A/B/C as separate Linux amd64 jobs. A missing prerequisite
+or failed required check is non-green. It uploads selected receipts and outputs,
+excluding private homes, provider contents, runtime state and private keys.
 
 ## Edit and test
 

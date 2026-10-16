@@ -34,7 +34,7 @@ def check_package(archive):
         missing = required - set(names)
         if missing:
             raise ValueError(f"required files missing: {sorted(missing)}")
-        for name in SOURCE_PATHS:
+        for name in required:
             if bundle.read(name) != (ROOT / name).read_bytes():
                 raise ValueError(f"packaged source differs: {name}")
     return {"entries": len(names), "required_files": len(required), "source_bytes_match": True}

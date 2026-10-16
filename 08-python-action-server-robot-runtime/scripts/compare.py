@@ -186,7 +186,9 @@ def main(argv=None):
                 result = run_mode(ROOT, directory / name, rcc)
             if source_digest(ROOT) != expected_source:
                 raise RuntimeError("reviewed source changed during execution")
-            if result.get("source_digest", expected_source) != expected_source:
+            observed_source = result.get("source_digest", result.get("identity", {}).get(
+                "source_digest", expected_source))
+            if observed_source != expected_source:
                 raise RuntimeError("mode executed a different source digest")
         except Exception as exc:
             (directory / f"{name}-error.txt").write_text(traceback.format_exc())

@@ -4,6 +4,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
+import subprocess
 from pathlib import Path
 
 
@@ -69,7 +70,15 @@ class ArtifactRuntimeTests(unittest.TestCase):
         self.assertIn("validate_batch_task", command[2])
         self.assertIn("INVOICE_INPUT", command[2])
         self.assertIn("ROBOT_ARTIFACTS", command[2])
+        self.assertIn("--output-dir", command[2])
         self.assertEqual(command[3:], [str(source), str(source / "tasks.py"), str(input_path), str(output)])
+
+    def test_malformed_roots_do_not_count_as_unknown_signer_rejection(self):
+        invalid = subprocess.CompletedProcess([], 1, "", "invalid runtime trust roots")
+        with self.assertRaises(artifact_runtime.RuntimeFailure):
+            artifact_runtime._require_unknown_signer_rejection(invalid)
+        rejected = subprocess.CompletedProcess([], 1, "", "trust verification failed: unknown-signer")
+        artifact_runtime._require_unknown_signer_rejection(rejected)
 
     def test_execution_receipt_requires_a_strict_completed_lease(self) -> None:
         artifact = "sha256:" + "a" * 64
