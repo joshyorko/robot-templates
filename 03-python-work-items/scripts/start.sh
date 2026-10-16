@@ -78,8 +78,8 @@ for SHARD_PATH in output/shards/work-items-shard-*.json; do
   cat > "$CONSUMER_ENV" <<EOF
 {
   "RC_WORKITEM_ADAPTER": "FileAdapter",
-  "RC_WORKITEM_INPUT_PATH": "$SHARD_INPUT_DIR",
-  "RC_WORKITEM_OUTPUT_PATH": "$CONSUMER_OUTPUT_DIR"
+  "RC_WORKITEM_INPUT_PATH": "$SHARD_INPUT_DIR/work-items.json",
+  "RC_WORKITEM_OUTPUT_PATH": "$CONSUMER_OUTPUT_DIR/work-items.json"
 }
 EOF
 
@@ -101,8 +101,8 @@ REPORTER_ENV="output/file/runtime-env/env-for-reporter.json"
 cat > "$REPORTER_ENV" <<EOF
 {
   "RC_WORKITEM_ADAPTER": "FileAdapter",
-  "RC_WORKITEM_INPUT_PATH": "output/file/reporter-input",
-  "RC_WORKITEM_OUTPUT_PATH": "output/file/reporter-final"
+  "RC_WORKITEM_INPUT_PATH": "output/file/reporter-input/work-items.json",
+  "RC_WORKITEM_OUTPUT_PATH": "output/file/reporter-final/work-items.json"
 }
 EOF
 

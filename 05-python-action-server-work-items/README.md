@@ -136,7 +136,7 @@ backends. Never seed the direct FileAdapter fixture.
 ├── docker-compose.yml                  # Redis, RedisInsight, MongoDB, Mongo Express
 ├── tasks.py                            # producer / consumer / reporter
 ├── robot.yaml                          # RCC tasks and devTasks
-├── conda.yaml                          # actions-work-items[all]
+├── conda.yaml                          # actions-work-items
 ├── devdata/
 │   ├── env-for-*.json                  # FileAdapter
 │   ├── env-sqlite-*.json               # SQLite

@@ -1,7 +1,7 @@
 # Consolidated Task Logs Dashboard
 
-This directory contains the optional dashboard for the classic
-`robocorp.workitems` producer-consumer-reporter template. It reads task logs and
+This directory contains the optional dashboard for the
+`actions-work-items` producer-consumer-reporter robot. It reads task logs and
 work item artifacts from `output/` and writes a self-contained HTML dashboard
 for local inspection or CI artifacts.
 
@@ -16,8 +16,7 @@ rcc run -t Reporter -e devdata/env-for-reporter.json
 rcc run -t GenerateConsolidatedDashboard -e devdata/env-for-reporter.json
 ```
 
-The dashboard code expects the FileAdapter workflow to use directory-based
-paths:
+The dashboard code reads the FileAdapter workflow's JSON artifacts at:
 
 ```text
 output/file/producer-to-consumer/work-items.json

@@ -1,5 +1,5 @@
 from pathlib import Path
-from robocorp import workitems
+from actions import workitems
 from robocorp.tasks import get_output_dir, task
 import shutil
 import os
@@ -231,18 +231,18 @@ def assistant_org():
 
         producer_env = {
             "RC_WORKITEM_ADAPTER": "FileAdapter",
-            "RC_WORKITEM_INPUT_PATH": str(work_items_dir),
-            "RC_WORKITEM_OUTPUT_PATH": "output/file/producer-to-consumer",
+            "RC_WORKITEM_INPUT_PATH": str(work_items_path),
+            "RC_WORKITEM_OUTPUT_PATH": "output/file/producer-to-consumer/work-items.json",
         }
         consumer_env = {
             "RC_WORKITEM_ADAPTER": "FileAdapter",
-            "RC_WORKITEM_INPUT_PATH": "output/file/producer-to-consumer",
-            "RC_WORKITEM_OUTPUT_PATH": "output/file/consumer-to-reporter",
+            "RC_WORKITEM_INPUT_PATH": "output/file/producer-to-consumer/work-items.json",
+            "RC_WORKITEM_OUTPUT_PATH": "output/file/consumer-to-reporter/work-items.json",
         }
         reporter_env = {
             "RC_WORKITEM_ADAPTER": "FileAdapter",
-            "RC_WORKITEM_INPUT_PATH": "output/file/reporter-input",
-            "RC_WORKITEM_OUTPUT_PATH": "output/file/reporter-final",
+            "RC_WORKITEM_INPUT_PATH": "output/file/reporter-input/work-items.json",
+            "RC_WORKITEM_OUTPUT_PATH": "output/file/reporter-final/work-items.json",
         }
 
         stage_status: Dict[str, object] = {stage: None for stage in stage_order}
@@ -354,8 +354,8 @@ def assistant_org():
                             json.dump(shard_data, target_handle, indent=2)
 
                         shard_env = consumer_env.copy()
-                        shard_env["RC_WORKITEM_INPUT_PATH"] = str(shard_input_dir)
-                        shard_env["RC_WORKITEM_OUTPUT_PATH"] = str(shard_output_dir)
+                        shard_env["RC_WORKITEM_INPUT_PATH"] = str(shard_input_dir / "work-items.json")
+                        shard_env["RC_WORKITEM_OUTPUT_PATH"] = str(shard_output_dir / "work-items.json")
                         os.environ["SHARD_ID"] = str(shard_idx)
                         env_path = Path(
                             f"output/file/runtime-env/env-for-consumer-shard-{shard_idx}.json"

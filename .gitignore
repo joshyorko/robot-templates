@@ -1,1 +1,18 @@
-.worktrees/
+# Repository tooling, RCC cache, and release artifacts
+/.worktrees/
+/.tools/
+/.rcc_home/
+/dist/
+/*.zip
+
+# Local Python environment and cache
+/.venv/
+__pycache__/
+*.py[cod]
+
+# Local secrets; keep shareable examples
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template

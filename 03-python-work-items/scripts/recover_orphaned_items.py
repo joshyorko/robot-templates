@@ -8,7 +8,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from robocorp_adapters_custom._sqlite import SQLiteAdapter
+from actions.work_items import SQLiteAdapter
 
 def main():
     # Load adapter configuration from environment
@@ -23,8 +23,11 @@ def main():
     print(f"Queue: {queue_name}")
     print(f"Files Dir: {files_dir}\n")
 
-    # Initialize adapter (reads from environment variables)
-    adapter = SQLiteAdapter()
+    adapter = SQLiteAdapter(
+        db_path=db_path,
+        queue_name=queue_name,
+        files_dir=files_dir,
+    )
 
     # Recover orphaned items
     recovered = adapter.recover_orphaned_work_items()

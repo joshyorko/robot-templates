@@ -1,5 +1,6 @@
 from pathlib import Path
-from robocorp import log, workitems
+from robocorp import log
+from actions import workitems
 from robocorp.tasks import get_output_dir, task
 import shutil
 import os

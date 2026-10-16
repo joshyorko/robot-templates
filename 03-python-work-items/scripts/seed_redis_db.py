@@ -14,16 +14,17 @@ def load_env(env_json: Path):
 
 def main():
     ap = argparse.ArgumentParser(description="Seed Redis with initial work items (from work-items.json).")
-    ap.add_argument("--env", default="devdata/env-redis-producer.json",
-                    help="Env JSON that sets RC_WORKITEM_QUEUE_NAME, REDIS_HOST, etc.")
+    ap.add_argument("--env", default="",
+                    help="Optional env JSON; otherwise use the RCC task environment.")
     ap.add_argument("--json", default="devdata/work-items-in/input-for-producer/work-items.json",
                     help="Path to work-items.json (array of objects with at least 'payload').")
     args = ap.parse_args()
 
-    load_env(Path(args.env))
+    if args.env:
+        load_env(Path(args.env))
 
     # Import your adapter after env is loaded
-    from robocorp_adapters_custom._redis import RedisAdapter
+    from actions.work_items import RedisAdapter
 
     queue = os.getenv("RC_WORKITEM_QUEUE_NAME", "default")
     print(f"Seeding Redis queue: {queue}")

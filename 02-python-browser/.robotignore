@@ -1,0 +1,20 @@
+# RCC matches basenames, not Git ignore syntax.
+# Exclude all env files from distributable bundles, including examples.
+output/
+testrun/
+temp/
+.rpa/
+venv/
+.venv/
+robot.zip
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.env
+.env.*
+.idea/
+.vscode/
+.DS_Store
+.~lock*

@@ -14,16 +14,17 @@ def load_env(env_json: Path):
 
 def main():
     ap = argparse.ArgumentParser(description="Seed DocumentDB/MongoDB with initial work items.")
-    ap.add_argument("--env", default="devdata/env-docdb-local-producer.json",
-                    help="Env JSON that sets DOCDB_* vars.")
+    ap.add_argument("--env", default="",
+                    help="Optional env JSON; otherwise use the RCC task environment.")
     ap.add_argument("--json", default="devdata/work-items-in/input-for-producer/work-items.json",
                     help="Path to work-items.json.")
     args = ap.parse_args()
 
-    load_env(Path(args.env))
+    if args.env:
+        load_env(Path(args.env))
 
     # Import your adapter after env is loaded
-    from robocorp_adapters_custom._docdb import DocumentDBAdapter
+    from actions.work_items import DocumentDBAdapter
 
     queue = os.getenv("RC_WORKITEM_QUEUE_NAME", "default")
     print(f"Seeding DocumentDB queue: {queue}")

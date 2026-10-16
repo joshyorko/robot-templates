@@ -17,6 +17,8 @@ tasks:
 
 
 devTasks:
+  TestWorkItems:
+    shell: python -m unittest discover -s tests -v
   SeedSQLiteDB:
     shell: python scripts/seed_sqlite_db.py
   SeedRedisDB:
@@ -48,4 +50,4 @@ PATH:
 PYTHONPATH:
   - .
 ignoreFiles:
-  - .gitignore
+  - .robotignore

@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install RCC
         run: |
@@ -33,7 +33,7 @@ jobs:
           rcc version
 
       - name: Cache ROBOCORP_HOME
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.ROBOCORP_HOME }}
           key: rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-${{ env.RCC_VERSION }}-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
@@ -66,15 +66,15 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Get version
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            echo "VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
           else
-            echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "VERSION=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Install RCC
@@ -87,7 +87,7 @@ jobs:
           rcc version
 
       - name: Cache ROBOCORP_HOME
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.ROBOCORP_HOME }}
           key: rcc-home-${{ env.RCC_CACHE_VERSION }}-${{ runner.os }}-${{ env.RCC_VERSION }}-${{ hashFiles('**/robot.yaml','**/conda.yaml') }}
@@ -123,7 +123,7 @@ jobs:
       - name: Create templates.zip bundle
         run: |
           cd dist/templates
-          zip ../templates.zip *.zip
+          zip ../templates.zip ./*.zip
           cd ..
           echo "Created templates.zip:"
           ls -la templates.zip
@@ -152,7 +152,7 @@ jobs:
           cat dist/templates.yaml
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
           name: Templates ${{ steps.version.outputs.VERSION }}
@@ -162,7 +162,7 @@ jobs:
             This release contains the following templates:
             - **01-python**: Python - Minimal
             - **02-python-browser**: Python - Browser automation with Playwright
-            - **03-python-work-items**: Python - Producer-Consumer with Custom Adapters
+            - **03-python-work-items**: Python - Producer-Consumer with actions-work-items
             - **04-python-assistant-ai**: Python - Assistant AI Chat
             - **05-python-action-server-work-items**: Python - Action Server Work Items
             - **06-python-uv-native**: Python - UV Native

@@ -7,11 +7,11 @@
 
 dependencies:
   - python=3.12.11 # https://anaconda.org/conda-forge/python
-  - uv=0.11.14
+  - uv=0.13.1
   - pip:
-      - robocorp==3.1.1 # https://pypi.org/project/robocorp
+      - robocorp==3.1.4 # https://pypi.org/project/robocorp
       - robocorp-truststore==0.9.1 # https://pypi.org/project/robocorp-truststore
-      - actions-work-items[all]==0.4.1 # https://pypi.org/project/actions-work-items
-      - requests==2.34.1 # https://pypi.org/project/requests
-      - gitpython==3.1.50 # https://pypi.org/project/GitPython
-      - pandas==3.0.3 # https://pypi.org/project/pandas
+      - actions-work-items==0.4.4 # https://pypi.org/project/actions-work-items
+      - requests==2.34.2 # https://pypi.org/project/requests
+      - gitpython==3.2.1 # https://pypi.org/project/GitPython
+      - pandas==3.0.6 # https://pypi.org/project/pandas

@@ -1,22 +1,23 @@
 # Python Work Items
 
-Classic `robocorp.workitems` producer-consumer-reporter template.
+Fetch-repos producer-consumer-reporter robot using `actions-work-items`.
 
 Use this template when you want a normal RCC robot that reads and writes work
 items with:
 
 ```python
-from robocorp import workitems
+from actions import workitems
 
 for item in workitems.inputs:
     workitems.outputs.create({"processed": True, "source": item.payload})
     item.done()
 ```
 
-This is intentionally different from `05-python-action-server-work-items`,
-which demonstrates `actions-work-items` and Action Server integration. This
-template stays on the classic `robocorp.workitems` API and uses
-`robocorp-adapters-custom` only to swap the backing queue.
+This template runs as an RCC robot with `robocorp.tasks`, an optional assistant,
+and a dashboard. `05-python-action-server-work-items` focuses on Action Server
+integration. Both use the `actions-work-items` API and adapters. Redis and
+MongoDB clients are pinned separately in `conda.yaml`; the work item package
+does not use the `[all]` extra.
 
 ## Run From The Robot Root
 
@@ -31,10 +32,30 @@ adapter and the exact input/output queue or FileAdapter directory for that
 stage.
 
 For FileAdapter env files, `RC_WORKITEM_INPUT_PATH` and
-`RC_WORKITEM_OUTPUT_PATH` are directories that contain `work-items.json`. Do
-not point them at the JSON file itself.
+`RC_WORKITEM_OUTPUT_PATH` point to JSON files ending in `work-items.json`.
+This selects the package's direct-file mode for the list-shaped fixtures and
+stage outputs. Keep these explicit file paths in generated shard env files too.
 
 ## Quick Smoke
+
+Offline integration checks use temporary files and SQLite databases, without
+GitHub requests or repository cloning:
+
+```bash
+rcc run --dev -t TestWorkItems
+```
+
+To include Redis and MongoDB payload, attachment, and success/failure lifecycle
+checks, start the local Compose services and supply their test endpoints:
+
+```bash
+docker compose up -d --wait redis mongodb
+rcc run --dev -t TestWorkItems -e devdata/env-test-services.json
+```
+
+Service tests use unique temporary queues. Without the service env file, those
+two tests are skipped. MongoDB exercises the DocumentDB adapter locally; this
+does not verify an AWS DocumentDB deployment.
 
 The lowest-friction smoke uses SQLite and does not require Redis or MongoDB:
 
@@ -129,6 +150,9 @@ Backend boundaries:
 - Redis and MongoDB / DocumentDB use local Docker services for development.
   Production credentials should come from job environment or secret injection,
   not committed env files.
+- Redis uses `RC_REDIS_URL`, including any authentication and database index.
+  The Cluster/Sentinel example files require a compatible single proxy endpoint;
+  the adapter does not perform native Cluster or Sentinel discovery.
 - `devdata/env-yorko-control-room-*.json` files are placeholders only. Replace
   the placeholder token/workspace values outside the template before using that
   adapter.
@@ -149,13 +173,13 @@ Backend boundaries:
 03-python-work-items/
 ├── tasks.py                            # producer / consumer / reporter
 ├── robot.yaml                          # RCC tasks and devTasks
-├── conda.yaml                          # classic robocorp + custom adapters
+├── conda.yaml                          # RCC tasks + actions-work-items
 ├── docker-compose.yml                  # Redis, RedisInsight, MongoDB, Mongo Express
 ├── devdata/
-│   ├── env-for-*.json                  # FileAdapter directories
-│   ├── env-sqlite-*.json               # SQLite custom adapter
-│   ├── env-redis-*.json                # Redis custom adapter
-│   ├── env-docdb-local-*.json          # MongoDB / DocumentDB custom adapter
+│   ├── env-for-*.json                  # FileAdapter JSON paths
+│   ├── env-sqlite-*.json               # SQLite adapter
+│   ├── env-redis-*.json                # Redis adapter
+│   ├── env-docdb-local-*.json          # MongoDB / DocumentDB adapter
 │   └── work-items-in/                  # local producer seed data
 ├── scripts/
 │   ├── seed_sqlite_db.py               # seed SQLite input queue
@@ -169,6 +193,6 @@ Backend boundaries:
 
 ## References
 
-- [robocorp-adapters-custom](https://pypi.org/project/robocorp-adapters-custom/)
+- [actions-work-items](https://pypi.org/project/actions-work-items/)
 - [RCC recipes](https://github.com/joshyorko/rcc/blob/master/docs/recipes.md)
-- [Robocorp work items](https://sema4.ai/docs/automation/python/robocorp/robocorp-workitems)
+- [Work item API and adapters](https://github.com/joshyorko/actions/tree/community/work-items)

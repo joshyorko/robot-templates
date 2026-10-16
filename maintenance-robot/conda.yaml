@@ -7,9 +7,9 @@
 
 dependencies:
   - python=3.12.11 # https://anaconda.org/conda-forge/python
-  - uv=0.11.14 # https://anaconda.org/conda-forge/uv
+  - uv=0.13.1 # https://anaconda.org/conda-forge/uv
   - pip:
-      - requests==2.34.1
+      - requests==2.34.2
       - robocorp-tasks==4.1.1
       - robocorp-truststore==0.9.1
       - packaging==24.0

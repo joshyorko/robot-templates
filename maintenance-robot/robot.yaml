@@ -24,4 +24,4 @@ PYTHONPATH:
   - .
   - src
 ignoreFiles:
-  - .gitignore
+  - .robotignore

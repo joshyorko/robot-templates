@@ -1,4 +1,4 @@
-from robocorp import workitems
+from actions import workitems
 from robocorp.tasks import task
 
 

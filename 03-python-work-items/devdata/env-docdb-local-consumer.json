@@ -1,5 +1,5 @@
 {
-  "RC_WORKITEM_ADAPTER": "robocorp_adapters_custom._docdb.DocumentDBAdapter",
+  "RC_WORKITEM_ADAPTER": "actions.work_items.DocumentDBAdapter",
   "DOCDB_HOSTNAME": "localhost",
   "DOCDB_PORT": "27017",
   "DOCDB_USERNAME": "qauser",

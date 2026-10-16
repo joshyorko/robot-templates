@@ -7,11 +7,11 @@ channels:
 
 dependencies:
   - python=3.12.11                     # https://anaconda.org/conda-forge/python
-  - uv=0.11.14                         # https://anaconda.org/conda-forge/uv
+  - uv=0.13.1                         # https://anaconda.org/conda-forge/uv
   - pip:
       - robocorp-truststore==0.9.1      # https://pypi.org/project/robocorp-truststore
       - rpaframework-assistant==6.0.0   # https://pypi.org/project/rpaframework-assistant
-      - robocorp==3.1.1                 # https://pypi.org/project/robocorp
+      - robocorp==3.1.4                 # https://pypi.org/project/robocorp
       - robocorp-browser==2.4.0         # https://pypi.org/project/robocorp-browser
-      - openai==2.36.0                # https://pypi.org/project/openai/
-      - python-dotenv==1.2.2            # https://pypi.org/project/python-dotenv/
+      - openai==3.31.0                # https://pypi.org/project/openai/
+      - python-dotenv==1.2.4            # https://pypi.org/project/python-dotenv/

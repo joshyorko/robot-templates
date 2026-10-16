@@ -21,14 +21,14 @@ Each public template should answer these questions from its README:
 | --- | --- | --- | --- | --- |
 | `01-python` | Minimal RCC robot baseline | `rcc-robots` | `rcc run -t RunTask` | Keep plain Python only. |
 | `02-python-browser` | Browser automation with Playwright | `rcc-robots` | `rcc run -t BrowserExample` | Prefer deterministic, unauthenticated browser work. |
-| `03-python-work-items` | Classic `robocorp.workitems` producer/consumer/reporter | `rcc-workitems` | File or SQLite producer -> consumer -> reporter ladder | Keep distinct from `actions-work-items`. |
+| `03-python-work-items` | RCC fetch-repos robot using `actions-work-items` | `rcc-workitems` | Offline `TestWorkItems`, then File or SQLite workflow | Includes assistant and dashboard. |
 | `04-python-assistant-ai` | Assistant/AI robot with explicit credential boundary | `rcc-robots` | `rcc run --dev -t TestKeys` plus documented assistant run | Do not commit credentials or imply no key is needed. |
 | `05-python-action-server-work-items` | Reference-grade Action Server work item template | `action-server`, `rcc-workitems` | Existing backend smoke tasks | Tighten real gaps only; avoid churn. |
 | `06-python-uv-native` | RCC robot showing uv-native dependency setup | `rcc-robots` | `rcc run -t RunTask` | Make uv value clear; do not duplicate `01-python`. |
 
 ## Integration Checks
 
-- `03-python-work-items` must keep the classic `robocorp.workitems` API.
+- `03-python-work-items` uses `actions-work-items` with the RCC task runner.
 - `05-python-action-server-work-items` must keep the `actions-work-items` and
   Action Server boundary.
 - READMEs should show commands from the template root, not from the workspace

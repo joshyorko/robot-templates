@@ -1,18 +1,28 @@
-output/
-venv/
-temp/
-.rpa/
-.idea/
-.ipynb_checkpoints/
-*/.ipynb_checkpoints/*
-.virtual_documents/
-*/.virtual_documents/*
-.vscode
-.DS_Store
-*.pyc
-*.zip
-*/work-items-out/*
-testrun/*
-.~lock*
-*.pkl
+# RCC output and local environments
+/output/
+/testrun/
+/temp/
+/.rpa/
+/venv/
+/.venv/
+/*.zip
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local secrets; keep shareable examples
 .env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# Local editor and desktop state
+.idea/
+.vscode/
+.DS_Store
+.~lock*

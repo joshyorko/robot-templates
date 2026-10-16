@@ -20,7 +20,7 @@ Run template commands from the template directory unless you pass `-r`.
 
 Use Python 3 with PEP 8 defaults: 4-space indentation, `snake_case` functions, and grouped imports. Robocorp task entry points use `@task`; RCC task names in `robot.yaml` use PascalCase such as `RunTask`, `Producer`, or `SmokeSQLite`. Template directories follow `NN-python-purpose`. Use 2-space YAML indentation and pin package versions in `conda.yaml`.
 
-Keep `03-python-work-items` and `05-python-action-server-work-items` distinct: the former demonstrates classic `robocorp.workitems`; the latter demonstrates `actions-work-items` and Action Server integration.
+Keep `03-python-work-items` and `05-python-action-server-work-items` distinct: the former demonstrates an RCC fetch-repos robot with an assistant and dashboard; the latter demonstrates Action Server integration. Both use `actions-work-items` and its adapters.
 
 ## Testing Guidelines
 
@@ -33,3 +33,5 @@ History uses short imperative commits, often with Conventional Commit prefixes (
 ## Security & Configuration Tips
 
 Do not commit `.env`, API keys, generated `output/`, local databases, `.zip` bundles, or runtime work-item state. Use sample `devdata/` files for fixtures and real credentials from job env or secrets. In CI, pin RCC and cache `ROBOCORP_HOME` by RCC version plus `robot.yaml` and `conda.yaml` hashes; never commit cache contents.
+
+Use `.gitignore` for Git and `.robotignore` for RCC packaging. RCC's ignore reader matches basenames and does not support Git's anchored paths or negations. Keep runtime state and all `.env*` files out of bundles; Git may retain example env files. Verify actual RCC ZIP contents when changing packaging rules.

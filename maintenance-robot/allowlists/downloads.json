@@ -177,21 +177,13 @@
       {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["pymongo==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
     ]
   },
-  "robocorp-adapters-custom": {
-    "source": "pypi",
-    "package": "robocorp-adapters-custom",
-    "max_major": null,
-    "include_prerelease": false,
-    "targets": [
-      {"file": "03-python-work-items/conda.yaml", "patterns": ["robocorp-adapters-custom==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
-    ]
-  },
   "actions-work-items": {
     "source": "pypi",
     "package": "actions-work-items",
     "max_major": null,
     "include_prerelease": false,
     "targets": [
+      {"file": "03-python-work-items/conda.yaml", "patterns": ["actions-work-items==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]},
       {"file": "05-python-action-server-work-items/conda.yaml", "patterns": ["actions-work-items==(?P<version>[0-9]+(?:\\.[0-9]+)+)"]}
     ]
   },

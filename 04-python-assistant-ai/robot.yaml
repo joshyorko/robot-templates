@@ -26,4 +26,4 @@ PATH:
 PYTHONPATH:
   - .
 ignoreFiles:
-  - .gitignore
+  - .robotignore
