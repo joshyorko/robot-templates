@@ -1,0 +1,12 @@
+{
+  "report": {
+    "invoice_count": 2,
+    "classification_counts": {"ready": 1, "review": 1},
+    "classification_totals_cents": {"ready_cents": 7900, "review_cents": 175000},
+    "total_cents": 182900
+  },
+  "rows": [
+    {"invoice_id": "ALT-2001", "vendor": "Adventure Works", "amount_cents": 175000, "currency": "USD", "classification": "review"},
+    {"invoice_id": "ALT-2002", "vendor": "Tailspin Toys", "amount_cents": 7900, "currency": "USD", "classification": "ready"}
+  ]
+}

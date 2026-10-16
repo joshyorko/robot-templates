@@ -19,6 +19,8 @@ SOURCE_PATHS = (
     "invoice_robot/validator.py",
     "devdata/invoices.json",
     "devdata/invoices-alternate.json",
+    "devdata/expected.json",
+    "devdata/expected-alternate.json",
 )
 CSV_FIELDS = ("invoice_id", "vendor", "amount_cents", "currency", "classification")
 
@@ -139,16 +141,19 @@ def verify_outputs(output_dir: str | Path, input_path: str | Path) -> dict[str, 
     if actual_csv != csv_bytes:
         raise ValueError("results.csv does not match the canonical invoice rows")
 
-    default_input = input_path.resolve() == (Path(__file__).resolve().parents[1] / DEFAULT_FIXTURE).resolve()
     ground_truth_match = False
-    if default_input:
-        expected = json.loads((input_path.parent / EXPECTED_FIXTURE.name).read_text(encoding="utf-8"))
-        ground_truth_match = (
-            actual_report == _canonical_json(expected["report"])
-            and actual_csv == _csv_for_expected(expected["rows"])
-        )
-        if not ground_truth_match:
-            raise ValueError("default fixture outputs do not match checked-in ground truth")
+    fixtures = Path(__file__).resolve().parents[1] / "devdata"
+    for fixture, truth in [("invoices.json", "expected.json"),
+                           ("invoices-alternate.json", "expected-alternate.json")]:
+        if input_path.read_bytes() == (fixtures / fixture).read_bytes():
+            expected = json.loads((fixtures / truth).read_text(encoding="utf-8"))
+            ground_truth_match = (
+                actual_report == _canonical_json(expected["report"])
+                and actual_csv == _csv_for_expected(expected["rows"])
+            )
+            if not ground_truth_match:
+                raise ValueError("fixture outputs do not match checked-in ground truth")
+            break
     return {
         "report_sha256": hashlib.sha256(actual_report).hexdigest(),
         "results_sha256": hashlib.sha256(actual_csv).hexdigest(),

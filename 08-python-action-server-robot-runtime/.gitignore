@@ -1,3 +1,9 @@
 output/
 __pycache__/
 *.py[cod]
+.runtime/
+.env
+*.rcca
+*.zip
+*.pem
+*.key

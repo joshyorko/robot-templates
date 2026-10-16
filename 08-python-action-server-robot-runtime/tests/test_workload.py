@@ -38,9 +38,17 @@ class WorkloadTests(unittest.TestCase):
             validate_batch(ROOT / "devdata/invoices-alternate.json", output)
             evidence = verify_outputs(output, ROOT / "devdata/invoices-alternate.json")
 
-            self.assertFalse(evidence["ground_truth_match"])
+            self.assertTrue(evidence["ground_truth_match"])
             self.assertNotEqual((output / "report.json").read_bytes(), original_report)
             self.assertNotEqual((output / "results.csv").read_bytes(), original_csv)
+
+    def test_copied_input_still_checks_fixed_ground_truth(self):
+        with tempfile.TemporaryDirectory() as directory:
+            copied = Path(directory) / "copied.json"
+            copied.write_bytes((ROOT / "devdata/invoices.json").read_bytes())
+            output = Path(directory) / "output"
+            validate_batch(copied, output)
+            self.assertTrue(verify_outputs(output, copied)["ground_truth_match"])
 
     def test_invalid_input_fails_and_writes_failure_evidence(self):
         with tempfile.TemporaryDirectory() as temp_dir:
