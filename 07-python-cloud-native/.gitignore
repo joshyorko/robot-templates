@@ -1,0 +1,10 @@
+output/
+__pycache__/
+*.pyc
+*.rcca
+*.zip
+cloud-native-bundle.py
+.rcc-home/
+.venv/
+.vscode/
+.DS_Store

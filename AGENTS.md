@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-This repository publishes RCC robot templates. `templates.yaml` is the catalog and release manifest. Numbered directories (`01-python` through `06-python-uv-native`) are distributable templates; each keeps its own `README.md`, `robot.yaml`, `conda.yaml`, `tasks.py`, and optional `devdata/`, `scripts/`, `assets/`, `dashboard/`, or `docker-compose.yml`. Inspect `robot.yaml` before task code: tasks, `devTasks`, `environmentConfigs`, `artifactsDir`, `PATH`, and `PYTHONPATH` define runtime behavior.
+This repository publishes RCC robot templates. `templates.yaml` is the catalog and release manifest. Numbered directories (`01-python` through `07-python-cloud-native`) are distributable templates; each keeps its own `README.md`, `robot.yaml`, `conda.yaml`, `tasks.py`, and optional `devdata/`, `scripts/`, `assets/`, `dashboard/`, or `docker-compose.yml`. Inspect `robot.yaml` before task code: tasks, `devTasks`, `environmentConfigs`, `artifactsDir`, `PATH`, and `PYTHONPATH` define runtime behavior.
 
 ## Build, Test, and Development Commands
 

@@ -1,0 +1,10 @@
+tasks:
+  Contract:
+    shell: python -m cleanroom.control contract
+environmentConfigs:
+  - clean-room-environment.yaml
+artifactsDir: output
+PATH:
+  - .
+PYTHONPATH:
+  - .

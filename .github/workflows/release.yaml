@@ -12,7 +12,7 @@ on:
         default: 'v1.0.0'
 
 env:
-  RCC_VERSION: v18.17.3
+  RCC_VERSION: v18.19.6
   RCC_CACHE_VERSION: v2
   ROBOCORP_HOME: ${{ github.workspace }}/.rcc_home
 
@@ -27,6 +27,7 @@ jobs:
         run: |
           mkdir -p .tools/rcc/${{ env.RCC_VERSION }}
           curl -sSL https://github.com/joshyorko/rcc/releases/download/${{ env.RCC_VERSION }}/rcc-linux64 -o .tools/rcc/${{ env.RCC_VERSION }}/rcc
+          printf '%s  %s\n' '2036b84ec8637e76ea41ab90abd2963357b1fed5ceb9a4e58fe852c67baaff1e' .tools/rcc/${{ env.RCC_VERSION }}/rcc | sha256sum --check -
           chmod +x .tools/rcc/${{ env.RCC_VERSION }}/rcc
           echo "${GITHUB_WORKSPACE}/.tools/rcc/${{ env.RCC_VERSION }}" >> "$GITHUB_PATH"
           export PATH="${GITHUB_WORKSPACE}/.tools/rcc/${{ env.RCC_VERSION }}:$PATH"
@@ -81,6 +82,7 @@ jobs:
         run: |
           mkdir -p .tools/rcc/${{ env.RCC_VERSION }}
           curl -sSL https://github.com/joshyorko/rcc/releases/download/${{ env.RCC_VERSION }}/rcc-linux64 -o .tools/rcc/${{ env.RCC_VERSION }}/rcc
+          printf '%s  %s\n' '2036b84ec8637e76ea41ab90abd2963357b1fed5ceb9a4e58fe852c67baaff1e' .tools/rcc/${{ env.RCC_VERSION }}/rcc | sha256sum --check -
           chmod +x .tools/rcc/${{ env.RCC_VERSION }}/rcc
           echo "${GITHUB_WORKSPACE}/.tools/rcc/${{ env.RCC_VERSION }}" >> "$GITHUB_PATH"
           export PATH="${GITHUB_WORKSPACE}/.tools/rcc/${{ env.RCC_VERSION }}:$PATH"
@@ -166,6 +168,7 @@ jobs:
             - **04-python-assistant-ai**: Python - Assistant AI Chat
             - **05-python-action-server-work-items**: Python - Action Server Work Items
             - **06-python-uv-native**: Python - UV Native
+            - **07-python-cloud-native**: Python - Cloud-Native RCC Artifacts (.rcca)
             
             ### Usage
             ```bash
