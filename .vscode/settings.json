@@ -1,0 +1,8 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python.analysis.extraPaths": [
+        "/home/kdlocpanda/second_brain/Projects/automation-control-plane/robot-templates/02-python-browser/.",
+        "/home/kdlocpanda/second_brain/Projects/automation-control-plane/robot-templates/01-python/."
+    ],
+    "python.terminal.activateEnvironment": false
+}
