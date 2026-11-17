@@ -1,0 +1,18 @@
+tasks:
+  ValidateBatch:
+    shell: python -m robocorp.tasks run tasks.py -t validate_batch_task
+  FailBatch:
+    shell: python -m robocorp.tasks run tasks.py -t fail_batch
+
+devTasks:
+  TestWorkload:
+    shell: python -m unittest discover -s tests -v
+
+condaConfigFile: conda.yaml
+artifactsDir: output
+PATH:
+  - .
+PYTHONPATH:
+  - .
+ignoreFiles:
+  - .gitignore

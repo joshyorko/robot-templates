@@ -1,0 +1,8 @@
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.12.11
+  - uv=0.11.14
+  - pip:
+      - robocorp-tasks==4.0.0
